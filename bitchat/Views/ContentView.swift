@@ -1387,9 +1387,6 @@ struct SOSMapButton: View {
 struct SOSMapView: View {
     let pins: [SOSPin]
     @Environment(\.dismiss) var dismiss
-    @StateObject private var locator = SOSLocationFetcher()
-    @State private var prefetching = false
-    @State private var prefetchedCount: Int? = nil
 
     var body: some View {
         NavigationStack {
@@ -1397,17 +1394,10 @@ struct SOSMapView: View {
                 MeshMapRepresentable(pins: pins)
                     .ignoresSafeArea(edges: .bottom)
 
-                VStack(spacing: 8) {
-                    if pins.isEmpty {
-                        emptyState
-                    } else {
-                        pinsLegend
-                    }
-                    if let count = prefetchedCount {
-                        Text("// \(count) tile salvati offline")
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                    }
+                if pins.isEmpty {
+                    emptyState
+                } else {
+                    pinsLegend
                 }
             }
             .navigationTitle("SOS map")
@@ -1422,34 +1412,8 @@ struct SOSMapView: View {
                     }
                     .accessibilityLabel("Close")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await prefetch() }
-                    } label: {
-                        if prefetching {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "square.and.arrow.down")
-                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                        }
-                    }
-                    .accessibilityLabel("Pre-cache offline tiles")
-                    .disabled(prefetching)
-                }
             }
         }
-    }
-
-    private func prefetch() async {
-        guard !prefetching else { return }
-        prefetching = true
-        defer { prefetching = false }
-        guard let coord = await locator.fetchOnce() else { return }
-        let count = await MeshTilePrefetcher.prefetchAroundUser(
-            latitude: coord.latitude,
-            longitude: coord.longitude
-        )
-        await MainActor.run { prefetchedCount = count }
     }
 
     private var emptyState: some View {
@@ -1493,18 +1457,23 @@ struct SOSMapView: View {
     }
 }
 
-/// `MKMapView` wrapper. Uses Apple Maps tiles by default; falls back to a
-/// local `tiles/{z}/{x}/{y}.png` directory in `Documents/` when present so
-/// the area pre-cached at first launch keeps working without internet.
+/// `MKMapView` wrapper rendering SOS pins on Apple Maps. We previously tried
+/// to use OpenStreetMap tiles for offline caching, but their public tile
+/// server returns HTTP 403 to third-party apps (per their tile usage
+/// policy), which corrupts the cache with "Access blocked" tiles. We now
+/// rely on Apple Maps and clean up any leftover OSM cache at first load.
 struct MeshMapRepresentable: UIViewRepresentable {
     let pins: [SOSPin]
 
     func makeUIView(context: Context) -> MKMapView {
+        // Purge any stale OSM tile cache so previously poisoned tiles don't
+        // overlay Apple Maps. Idempotent: removes the directory if present.
+        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let stale = docs.appendingPathComponent("meshcomm-tiles", isDirectory: true)
+            try? FileManager.default.removeItem(at: stale)
+        }
         let map = MKMapView()
         map.showsUserLocation = true
-        if let overlay = MeshOfflineTileOverlay.makeIfAvailable() {
-            map.addOverlay(overlay, level: .aboveLabels)
-        }
         map.delegate = context.coordinator
         return map
     }
@@ -1540,81 +1509,10 @@ struct MeshMapRepresentable: UIViewRepresentable {
     }
 }
 
-/// Reads tiles from `Documents/meshcomm-tiles/{z}/{x}/{y}.png` if the
-/// pre-cache directory exists. The `MeshTilePrefetcher` writes to the same
-/// path. When the directory is missing the overlay is skipped and Apple
-/// Maps online tiles are used instead.
-final class MeshOfflineTileOverlay: MKTileOverlay {
-    private let baseDir: URL
-
-    private init(baseDir: URL) {
-        self.baseDir = baseDir
-        super.init(urlTemplate: nil)
-        self.canReplaceMapContent = false
-        self.minimumZ = 12
-        self.maximumZ = 16
-        self.tileSize = CGSize(width: 256, height: 256)
-    }
-
-    static func makeIfAvailable() -> MeshOfflineTileOverlay? {
-        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-        let dir = docs.appendingPathComponent("meshcomm-tiles", isDirectory: true)
-        guard FileManager.default.fileExists(atPath: dir.path) else { return nil }
-        return MeshOfflineTileOverlay(baseDir: dir)
-    }
-
-    override func loadTile(at path: MKTileOverlayPath, result: @escaping (Data?, Error?) -> Void) {
-        let file = baseDir
-            .appendingPathComponent("\(path.z)", isDirectory: true)
-            .appendingPathComponent("\(path.x)", isDirectory: true)
-            .appendingPathComponent("\(path.y).png")
-        if let data = try? Data(contentsOf: file) {
-            result(data, nil)
-        } else {
-            result(nil, nil)
-        }
-    }
-}
-
-/// One-shot pre-cacher for OSM tiles around the user's location. Triggered
-/// from Settings or AppInfo first-launch flow. This is intentionally simple:
-/// fixed zoom 14, a square ring covering ~5km, sequential downloads. Files
-/// land in `Documents/meshcomm-tiles/{z}/{x}/{y}.png` so the offline overlay
-/// can pick them up on the next map open.
-enum MeshTilePrefetcher {
-    static func prefetchAroundUser(latitude: Double, longitude: Double, radiusKm: Double = 5, zoom: Int = 14) async -> Int {
-        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return 0 }
-        let baseDir = docs.appendingPathComponent("meshcomm-tiles", isDirectory: true)
-        try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
-
-        let n = pow(2.0, Double(zoom))
-        let latRad = latitude * .pi / 180
-        let centerX = Int((longitude + 180) / 360 * n)
-        let centerY = Int((1 - log(tan(latRad) + 1 / cos(latRad)) / .pi) / 2 * n)
-        let metersPerTile = 40075000.0 * cos(latRad) / n
-        let tilesRadius = max(1, Int((radiusKm * 1000.0 / metersPerTile).rounded(.up)))
-
-        var saved = 0
-        for dx in -tilesRadius...tilesRadius {
-            for dy in -tilesRadius...tilesRadius {
-                let x = centerX + dx
-                let y = centerY + dy
-                let urlString = "https://tile.openstreetmap.org/\(zoom)/\(x)/\(y).png"
-                guard let url = URL(string: urlString) else { continue }
-                var req = URLRequest(url: url)
-                req.setValue("meshcomm/1.0 (offline-mesh)", forHTTPHeaderField: "User-Agent")
-                if let (data, _) = try? await URLSession.shared.data(for: req) {
-                    let dir = baseDir
-                        .appendingPathComponent("\(zoom)", isDirectory: true)
-                        .appendingPathComponent("\(x)", isDirectory: true)
-                    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-                    try? data.write(to: dir.appendingPathComponent("\(y).png"))
-                    saved += 1
-                }
-            }
-        }
-        return saved
-    }
-}
+// Note: a previous build shipped a `MeshOfflineTileOverlay` and a
+// `MeshTilePrefetcher` that pulled tiles from `tile.openstreetmap.org`.
+// OSM's volunteer-run tile server returns HTTP 403 to third-party apps
+// (see osm.wiki/Blocked) so those tiles ended up rendering as "Access
+// blocked" warnings. We removed the prefetch path entirely and rely on
+// Apple Maps inside MKMapView. To bring real offline tiles back we need
+// either a paid provider (Mapbox/MapTiler/Stadia) or our own tile server.

@@ -1,6 +1,12 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "// %@ tile salvati offline" : {
+
+    },
+    "// pin appariranno qui quando ricevi un broadcast [SOS] con coordinate" : {
+
+    },
     "%@" : {
 
     },
@@ -31049,6 +31055,9 @@
           }
         }
       }
+    },
+    "nessun SOS sulla mappa" : {
+
     },
     "recording %@" : {
       "comment" : "Voice note recording duration indicator",
