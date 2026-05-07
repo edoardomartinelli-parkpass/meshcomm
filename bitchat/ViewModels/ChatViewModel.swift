@@ -3339,7 +3339,7 @@ final class ChatViewModel: ObservableObject, BitchatDelegate, CommandContextProv
             // Clean up stale unread peer IDs whenever peer list updates
             self.cleanupStaleUnreadPeerIDs()
             
-            // Smart notification logic for "bitchatters nearby"
+            // Smart notification logic for "meshers nearby"
             let meshPeers = peers.filter { peerID in
                 self.meshService.isPeerConnected(peerID) || self.meshService.isPeerReachable(peerID)
             }
@@ -3364,7 +3364,7 @@ final class ChatViewModel: ObservableObject, BitchatDelegate, CommandContextProv
                         self.lastNetworkNotificationTime = Date()
                         NotificationService.shared.sendNetworkAvailableNotification(peerCount: meshPeers.count)
                         SecureLogger.info(
-                            "👥 Sent bitchatters nearby notification for \(meshPeers.count) mesh peers (new: \(newPeers.count))",
+                            "👥 Sent meshers nearby notification for \(meshPeers.count) mesh peers (new: \(newPeers.count))",
                             category: .session
                         )
                     }
