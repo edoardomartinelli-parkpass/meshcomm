@@ -3723,10 +3723,28 @@ final class ChatViewModel: ObservableObject, BitchatDelegate, CommandContextProv
         let content = "[SOS] \(nick)\(locationPart) richiesta soccorso immediato"
         let messageID = UUID().uuidString
         let timestamp = Date()
+
+        // Broadcast over BLE mesh, regardless of activeChannel.
         meshService.sendMessage(content,
                                 mentions: [],
                                 messageID: messageID,
                                 timestamp: timestamp)
+
+        // Local echo: surface the message in the sender's own timeline so
+        // the user sees confirmation of what was sent and can tap it later.
+        let echo = BitchatMessage(
+            id: messageID,
+            sender: nick,
+            content: content,
+            timestamp: timestamp,
+            isRelay: false,
+            isPrivate: false,
+            mentions: nil
+        )
+        timelineStore.append(echo, to: .mesh)
+        refreshVisibleMessages(from: activeChannel)
+
+        // Add SOS pin to local map so the sender can review the geo-fix.
         appendSOSPinIfPresent(messageID: messageID,
                               sender: nick,
                               content: content,
