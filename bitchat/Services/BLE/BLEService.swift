@@ -1725,7 +1725,11 @@ extension BLEService: CBCentralManagerDelegate {
         let advertisedName = advertisementData[CBAdvertisementDataLocalNameKey] as? String ?? (peripheralID.prefix(6) + "…")
         let isConnectable = (advertisementData[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue ?? true
         let rssiValue = RSSI.intValue
-        
+
+        // meshcomm: feed proximity tracker on every advertisement, even when
+        // we skip the connection attempt below (we still want fresh RSSI).
+        ProximityTracker.shared.record(deviceID: peripheralID, rssi: rssiValue)
+
         // Skip if peripheral is not connectable (per advertisement data)
         guard isConnectable else { return }
 
@@ -2216,6 +2220,7 @@ extension BLEService: CBPeripheralDelegate {
                 boundPeerID = claimedSenderID
                 state.peerID = claimedSenderID
                 peripherals[peripheralUUID] = state
+                ProximityTracker.shared.bind(deviceID: peripheralUUID, peerID: claimedSenderID)
             }
             processNotificationPacket(packet, from: peripheral, peripheralUUID: peripheralUUID)
         }
@@ -2235,6 +2240,7 @@ extension BLEService: CBPeripheralDelegate {
                     peripherals[peripheralUUID] = state
                 }
                 peerToPeripheralUUID[senderID] = peripheralUUID
+                ProximityTracker.shared.bind(deviceID: peripheralUUID, peerID: senderID)
                 refreshLocalTopology()
             }
 
@@ -4579,5 +4585,122 @@ extension BLEService {
             threshold = max(threshold, TransportConfig.bleRSSIHighTimeoutThreshold)
         }
         dynamicRSSIThreshold = threshold
+    }
+}
+
+// MARK: - meshcomm Proximity Tracker
+
+/// Tracks per-peer BLE RSSI samples to power "approaching / receding"
+/// indicators in the UI. Fed from `centralManager(_:didDiscover:...)` on
+/// every advertisement and from announce-packet handling once we know the
+/// peer's stable PeerID.
+final class ProximityTracker: ObservableObject {
+    static let shared = ProximityTracker()
+
+    enum Trend: Equatable {
+        case approaching
+        case stable
+        case receding
+        case unknown
+    }
+
+    struct Reading: Equatable {
+        let rssiSmoothed: Int
+        let approxMeters: Double
+        let trend: Trend
+        let updatedAt: Date
+    }
+
+    private struct Sample {
+        let value: Int
+        let at: Date
+    }
+
+    private let queue = DispatchQueue(label: "meshcomm.proximity", attributes: .concurrent)
+    private var historyByDevice: [String: [Sample]] = [:]
+    private var deviceToPeer: [String: PeerID] = [:]
+    private let maxSamples = 8
+    private let measuredPower: Double = -59
+    private let pathLossExponent: Double = 2.5
+
+    @Published private(set) var pulse: Date = .distantPast
+
+    func record(deviceID: String, rssi: Int) {
+        queue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
+            var arr = self.historyByDevice[deviceID] ?? []
+            arr.append(Sample(value: rssi, at: Date()))
+            if arr.count > self.maxSamples {
+                arr.removeFirst(arr.count - self.maxSamples)
+            }
+            self.historyByDevice[deviceID] = arr
+        }
+        DispatchQueue.main.async { [weak self] in
+            self?.pulse = Date()
+        }
+    }
+
+    func bind(deviceID: String, peerID: PeerID) {
+        queue.async(flags: .barrier) { [weak self] in
+            self?.deviceToPeer[deviceID] = peerID
+        }
+    }
+
+    func reading(for peerID: PeerID) -> Reading? {
+        queue.sync {
+            guard let device = deviceToPeer.first(where: { $0.value == peerID })?.key,
+                  let history = historyByDevice[device], !history.isEmpty
+            else { return nil }
+            let avg = history.map { $0.value }.reduce(0, +) / history.count
+            let trend: Trend
+            if history.count < 4 {
+                trend = .unknown
+            } else {
+                let half = history.count / 2
+                let earlier = history.prefix(half).map { $0.value }.reduce(0, +) / half
+                let later = history.suffix(half).map { $0.value }.reduce(0, +) / half
+                let delta = later - earlier
+                if delta >= 4 { trend = .approaching }
+                else if delta <= -4 { trend = .receding }
+                else { trend = .stable }
+            }
+            let distance = pow(10, (measuredPower - Double(avg)) / (10 * pathLossExponent))
+            return Reading(
+                rssiSmoothed: avg,
+                approxMeters: max(0.5, distance),
+                trend: trend,
+                updatedAt: history.last?.at ?? Date()
+            )
+        }
+    }
+
+    func allReadings() -> [PeerID: Reading] {
+        queue.sync {
+            var out: [PeerID: Reading] = [:]
+            for (device, peer) in deviceToPeer {
+                guard let history = historyByDevice[device], !history.isEmpty else { continue }
+                let avg = history.map { $0.value }.reduce(0, +) / history.count
+                let trend: Trend
+                if history.count < 4 {
+                    trend = .unknown
+                } else {
+                    let half = history.count / 2
+                    let earlier = history.prefix(half).map { $0.value }.reduce(0, +) / half
+                    let later = history.suffix(half).map { $0.value }.reduce(0, +) / half
+                    let delta = later - earlier
+                    if delta >= 4 { trend = .approaching }
+                    else if delta <= -4 { trend = .receding }
+                    else { trend = .stable }
+                }
+                let distance = pow(10, (measuredPower - Double(avg)) / (10 * pathLossExponent))
+                out[peer] = Reading(
+                    rssiSmoothed: avg,
+                    approxMeters: max(0.5, distance),
+                    trend: trend,
+                    updatedAt: history.last?.at ?? Date()
+                )
+            }
+            return out
+        }
     }
 }

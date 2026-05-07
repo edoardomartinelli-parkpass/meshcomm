@@ -9,6 +9,7 @@
 import SwiftUI
 import CoreLocation
 import MapKit
+import BitFoundation
 #if os(iOS)
 import UIKit
 #endif
@@ -363,6 +364,7 @@ struct ContentView: View {
                 HStack(alignment: .center, spacing: 4) {
                     SOSButton(viewModel: viewModel)
                     SOSMapButton(viewModel: viewModel)
+                    RadarButton(viewModel: viewModel)
                     if shouldShowMediaControls {
                         attachmentButton
                     }
@@ -1516,3 +1518,185 @@ struct MeshMapRepresentable: UIViewRepresentable {
 // blocked" warnings. We removed the prefetch path entirely and rely on
 // Apple Maps inside MKMapView. To bring real offline tiles back we need
 // either a paid provider (Mapbox/MapTiler/Stadia) or our own tile server.
+
+// MARK: - Proximity Radar (meshcomm)
+
+/// Toolbar button that surfaces the proximity radar sheet. Trend arrows are
+/// computed from BLE RSSI history collected by `ProximityTracker`.
+struct RadarButton: View {
+    @ObservedObject var viewModel: ChatViewModel
+    @State private var showingSheet = false
+
+    var body: some View {
+        Button {
+            showingSheet = true
+        } label: {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: 22))
+                .foregroundStyle(Color(red: 0.851, green: 0.467, blue: 0.341))
+                .frame(width: 36, height: 36)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open proximity radar")
+        .sheet(isPresented: $showingSheet) {
+            RadarSheetView(viewModel: viewModel)
+        }
+    }
+}
+
+struct RadarSheetView: View {
+    @ObservedObject var viewModel: ChatViewModel
+    @Environment(\.dismiss) var dismiss
+    @State private var rows: [RadarRowData] = []
+    @State private var refreshTask: Task<Void, Never>?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if rows.isEmpty {
+                    emptyState
+                } else {
+                    List(rows) { row in
+                        RadarRow(row: row)
+                    }
+                    .listStyle(.plain)
+                }
+            }
+            .navigationTitle("proximity radar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    }
+                    .accessibilityLabel("Close")
+                }
+            }
+            .onAppear {
+                refresh()
+                refreshTask = Task { @MainActor in
+                    while !Task.isCancelled {
+                        try? await Task.sleep(nanoseconds: 1_500_000_000)
+                        if Task.isCancelled { break }
+                        refresh()
+                    }
+                }
+            }
+            .onDisappear { refreshTask?.cancel() }
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "antenna.radiowaves.left.and.right.slash")
+                .font(.system(size: 40))
+                .foregroundStyle(.secondary)
+            Text("nessun peer in raggio BLE")
+                .font(.system(size: 14, design: .monospaced))
+            Text("// avvicinati a un altro device meshcomm e attendi qualche secondo")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 30)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @MainActor
+    private func refresh() {
+        let all = ProximityTracker.shared.allReadings()
+        var built: [RadarRowData] = []
+        for peer in viewModel.allPeers {
+            guard let reading = all[peer.peerID] else { continue }
+            built.append(RadarRowData(
+                id: peer.peerID,
+                nickname: peer.nickname,
+                shortID: String(peer.peerID.id.prefix(6)),
+                reading: reading
+            ))
+        }
+        built.sort { $0.reading.rssiSmoothed > $1.reading.rssiSmoothed }
+        rows = built
+    }
+}
+
+struct RadarRowData: Identifiable {
+    let id: PeerID
+    let nickname: String
+    let shortID: String
+    let reading: ProximityTracker.Reading
+}
+
+struct RadarRow: View {
+    let row: RadarRowData
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: trendIcon)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(trendColor)
+                .frame(width: 32)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(row.nickname)
+                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    Text(row.shortID)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+                Text(trendLabel)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(formattedDistance)
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                Text("\(row.reading.rssiSmoothed) dBm")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 6)
+    }
+
+    private var trendIcon: String {
+        switch row.reading.trend {
+        case .approaching: return "arrow.up.right.circle.fill"
+        case .receding: return "arrow.down.right.circle.fill"
+        case .stable: return "circle.fill"
+        case .unknown: return "questionmark.circle"
+        }
+    }
+
+    private var trendColor: Color {
+        switch row.reading.trend {
+        case .approaching: return Color(red: 0.529, green: 0.682, blue: 0.420)
+        case .receding: return Color(red: 0.760, green: 0.330, blue: 0.314)
+        case .stable: return Color(red: 0.851, green: 0.467, blue: 0.341)
+        case .unknown: return .secondary
+        }
+    }
+
+    private var trendLabel: String {
+        switch row.reading.trend {
+        case .approaching: return "in avvicinamento"
+        case .receding: return "in allontanamento"
+        case .stable: return "distanza stabile"
+        case .unknown: return "calibrazione..."
+        }
+    }
+
+    private var formattedDistance: String {
+        let m = row.reading.approxMeters
+        if m < 10 { return String(format: "≈%.1f m", m) }
+        return String(format: "≈%.0f m", m)
+    }
+}
