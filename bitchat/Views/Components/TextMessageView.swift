@@ -53,12 +53,11 @@ struct TextMessageView: View {
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
-            if isOwnMessage { Spacer(minLength: 48) }
+            if isOwnMessage { Spacer(minLength: 60) }
 
             bubble
-                .frame(maxWidth: 320, alignment: isOwnMessage ? .trailing : .leading)
 
-            if !isOwnMessage { Spacer(minLength: 48) }
+            if !isOwnMessage { Spacer(minLength: 60) }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 1)

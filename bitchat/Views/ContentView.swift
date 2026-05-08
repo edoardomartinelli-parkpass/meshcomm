@@ -328,14 +328,14 @@ struct ContentView: View {
                 recordingIndicator
             }
 
-            HStack(alignment: .center, spacing: 4) {
+            HStack(alignment: .center, spacing: 10) {
                 TextField(
                     "",
                     text: $messageText,
                     prompt: Text(
                         String(localized: "content.input.message_placeholder", comment: "Placeholder shown in the chat composer")
                     )
-                    .foregroundColor(secondaryTextColor.opacity(0.6))
+                    .foregroundColor(secondaryTextColor.opacity(0.55))
                 )
                 .textFieldStyle(.plain)
                 .font(.bitchatSystem(size: 15, design: .monospaced))
@@ -347,12 +347,6 @@ struct ContentView: View {
 #endif
                 .submitLabel(.send)
                 .onSubmit { sendMessage() }
-                .padding(.vertical, 4)
-                .padding(.horizontal, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(colorScheme == .dark ? Color.black.opacity(0.35) : Color.white.opacity(0.7))
-                )
                 .modifier(FocusEffectDisabledModifier())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .onChange(of: messageText) { newValue in
@@ -365,21 +359,30 @@ struct ContentView: View {
                     }
                 }
 
-                HStack(alignment: .center, spacing: 4) {
-                    SOSButton(viewModel: viewModel)
+                HStack(alignment: .center, spacing: 14) {
                     SOSMapButton(viewModel: viewModel)
                     RadarButton(viewModel: viewModel)
+                    SOSButton(viewModel: viewModel)
                     if shouldShowMediaControls {
                         attachmentButton
                     }
-
                     sendOrMicButton
                 }
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(colorScheme == .dark ? Color(white: 0.10) : Color(white: 0.95))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .stroke(secondaryTextColor.opacity(0.18), lineWidth: 1)
+            )
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 10)
         .padding(.top, 6)
-        .padding(.bottom, 8)
+        .padding(.bottom, 10)
         .background(backgroundColor.opacity(0.95))
     }
 
@@ -1163,7 +1166,7 @@ private extension ContentView {
         Image(systemName: "camera.circle.fill")
             .font(.bitchatSystem(size: 24))
             .foregroundColor(composerAccentColor)
-            .frame(width: 36, height: 36)
+            .frame(width: 26, height: 26)
             .contentShape(Circle())
             .onTapGesture {
                 // Tap = Photo Library
@@ -1181,7 +1184,7 @@ private extension ContentView {
             Image(systemName: "photo.circle.fill")
                 .font(.bitchatSystem(size: 24))
                 .foregroundColor(composerAccentColor)
-                .frame(width: 36, height: 36)
+                .frame(width: 26, height: 26)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Choose photo")
@@ -1200,10 +1203,10 @@ private extension ContentView {
                     .opacity(hasText ? 1 : 0)
                     .allowsHitTesting(hasText)
             }
-            .frame(width: 36, height: 36)
+            .frame(width: 26, height: 26)
         } else {
             sendButtonView(enabled: hasText)
-                .frame(width: 36, height: 36)
+                .frame(width: 26, height: 26)
         }
     }
 
@@ -1211,7 +1214,7 @@ private extension ContentView {
         Image(systemName: "mic.circle.fill")
             .font(.bitchatSystem(size: 24))
             .foregroundColor(voiceRecordingVM.state.isActive ? Color.red : composerAccentColor)
-            .frame(width: 36, height: 36)
+            .frame(width: 26, height: 26)
             .contentShape(Circle())
             .overlay(
                 Color.clear
@@ -1226,12 +1229,13 @@ private extension ContentView {
     }
 
     private func sendButtonView(enabled: Bool) -> some View {
-        let activeColor = composerAccentColor
+        let activeColor = Color(red: 0.851, green: 0.467, blue: 0.341)
         return Button(action: sendMessage) {
-            Image(systemName: "arrow.up.circle.fill")
-                .font(.bitchatSystem(size: 24))
-                .foregroundColor(enabled ? activeColor : Color.gray)
-                .frame(width: 36, height: 36)
+            Image(systemName: "paperplane.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(enabled ? activeColor : Color.gray.opacity(0.5))
+                .frame(width: 26, height: 26)
+                .rotationEffect(.degrees(45))
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
@@ -1264,7 +1268,8 @@ struct SOSButton: View {
             Image(systemName: "exclamationmark.octagon.fill")
                 .font(.system(size: 22, weight: .heavy))
                 .foregroundStyle(Color.red)
-                .frame(width: 36, height: 36)
+                .frame(width: 26, height: 26)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(sending)
@@ -1373,26 +1378,15 @@ struct SOSMapButton: View {
         Button {
             showingSheet = true
         } label: {
-            ZStack(alignment: .topTrailing) {
-                Image(systemName: "map.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(
-                        viewModel.sosPins.isEmpty
-                        ? Color.secondary
-                        : Color(red: 0.851, green: 0.467, blue: 0.341)
-                    )
-                    .frame(width: 36, height: 36)
-
-                if !viewModel.sosPins.isEmpty {
-                    Text("\(viewModel.sosPins.count)")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(Color.red, in: Capsule())
-                        .offset(x: 4, y: -2)
-                }
-            }
+            Image(systemName: "map")
+                .font(.system(size: 20, weight: .regular))
+                .foregroundStyle(
+                    viewModel.sosPins.isEmpty
+                    ? Color.secondary
+                    : Color(red: 0.851, green: 0.467, blue: 0.341)
+                )
+                .frame(width: 26, height: 26)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open SOS map")
@@ -1548,9 +1542,10 @@ struct RadarButton: View {
             showingSheet = true
         } label: {
             Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.system(size: 22))
+                .font(.system(size: 20, weight: .regular))
                 .foregroundStyle(Color(red: 0.851, green: 0.467, blue: 0.341))
-                .frame(width: 36, height: 36)
+                .frame(width: 26, height: 26)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open proximity radar")
