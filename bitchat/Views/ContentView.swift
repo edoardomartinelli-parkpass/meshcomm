@@ -1163,11 +1163,11 @@ private extension ContentView {
 
     var attachmentButton: some View {
         #if os(iOS)
-        Image(systemName: "camera.circle.fill")
-            .font(.bitchatSystem(size: 24))
-            .foregroundColor(composerAccentColor)
-            .frame(width: 26, height: 26)
-            .contentShape(Circle())
+        Image(systemName: "camera")
+            .font(.system(size: 24, weight: .regular))
+            .foregroundColor(Color.secondary)
+            .frame(width: 30, height: 30)
+            .contentShape(Rectangle())
             .onTapGesture {
                 // Tap = Photo Library
                 imagePickerSourceType = .photoLibrary
@@ -1181,10 +1181,10 @@ private extension ContentView {
             .accessibilityLabel("Tap for library, long press for camera")
         #else
         Button(action: { showMacImagePicker = true }) {
-            Image(systemName: "photo.circle.fill")
-                .font(.bitchatSystem(size: 24))
-                .foregroundColor(composerAccentColor)
-                .frame(width: 26, height: 26)
+            Image(systemName: "photo")
+                .font(.system(size: 24, weight: .regular))
+                .foregroundColor(Color.secondary)
+                .frame(width: 30, height: 30)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Choose photo")
@@ -1203,19 +1203,19 @@ private extension ContentView {
                     .opacity(hasText ? 1 : 0)
                     .allowsHitTesting(hasText)
             }
-            .frame(width: 26, height: 26)
+            .frame(width: 30, height: 30)
         } else {
             sendButtonView(enabled: hasText)
-                .frame(width: 26, height: 26)
+                .frame(width: 30, height: 30)
         }
     }
 
     private var micButtonView: some View {
-        Image(systemName: "mic.circle.fill")
-            .font(.bitchatSystem(size: 24))
-            .foregroundColor(voiceRecordingVM.state.isActive ? Color.red : composerAccentColor)
-            .frame(width: 26, height: 26)
-            .contentShape(Circle())
+        Image(systemName: "mic")
+            .font(.system(size: 24, weight: .regular))
+            .foregroundColor(voiceRecordingVM.state.isActive ? Color.red : Color.secondary)
+            .frame(width: 30, height: 30)
+            .contentShape(Rectangle())
             .overlay(
                 Color.clear
                     .contentShape(Circle())
@@ -1231,10 +1231,10 @@ private extension ContentView {
     private func sendButtonView(enabled: Bool) -> some View {
         let activeColor = Color(red: 0.851, green: 0.467, blue: 0.341)
         return Button(action: sendMessage) {
-            Image(systemName: "paperplane.fill")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(enabled ? activeColor : Color.gray.opacity(0.5))
-                .frame(width: 26, height: 26)
+            Image(systemName: "paperplane")
+                .font(.system(size: 24, weight: .regular))
+                .foregroundColor(enabled ? activeColor : Color.secondary.opacity(0.5))
+                .frame(width: 30, height: 30)
                 .rotationEffect(.degrees(45))
         }
         .buttonStyle(.plain)
@@ -1265,10 +1265,10 @@ struct SOSButton: View {
         Button {
             showConfirmation = true
         } label: {
-            Image(systemName: "exclamationmark.octagon.fill")
-                .font(.system(size: 22, weight: .heavy))
+            Image(systemName: "exclamationmark.octagon")
+                .font(.system(size: 24, weight: .regular))
                 .foregroundStyle(Color.red)
-                .frame(width: 26, height: 26)
+                .frame(width: 30, height: 30)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1379,13 +1379,13 @@ struct SOSMapButton: View {
             showingSheet = true
         } label: {
             Image(systemName: "map")
-                .font(.system(size: 20, weight: .regular))
+                .font(.system(size: 24, weight: .regular))
                 .foregroundStyle(
                     viewModel.sosPins.isEmpty
                     ? Color.secondary
                     : Color(red: 0.851, green: 0.467, blue: 0.341)
                 )
-                .frame(width: 26, height: 26)
+                .frame(width: 30, height: 30)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1542,9 +1542,9 @@ struct RadarButton: View {
             showingSheet = true
         } label: {
             Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(Color(red: 0.851, green: 0.467, blue: 0.341))
-                .frame(width: 26, height: 26)
+                .font(.system(size: 24, weight: .regular))
+                .foregroundStyle(Color.secondary)
+                .frame(width: 30, height: 30)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
