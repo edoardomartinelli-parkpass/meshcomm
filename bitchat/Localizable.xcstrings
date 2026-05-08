@@ -4,6 +4,12 @@
     "// avvicinati a un altro device meshcomm e attendi qualche secondo" : {
 
     },
+    "// callsign annunciato sui pacchetti HELLO. Visibile a tutti i peer." : {
+
+    },
+    "// cancella keypair, cronologia chat e pin SOS. Irreversibile." : {
+
+    },
     "// pin appariranno qui quando ricevi un broadcast [SOS] con coordinate" : {
 
     },
@@ -19014,6 +19020,9 @@
         }
       }
     },
+    "emergency wipe" : {
+
+    },
     "encryption.accessibility.establishing" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22594,6 +22603,9 @@
         }
       }
     },
+    "Fork of bitchat (Unlicense)" : {
+
+    },
     "geohash_people.action.block" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23488,6 +23500,9 @@
           }
         }
       }
+    },
+    "github / source" : {
+
     },
     "Images are only available in mesh chats." : {
       "extractionState" : "manual",
@@ -31059,10 +31074,16 @@
         }
       }
     },
+    "meshcomm v1.0" : {
+
+    },
     "nessun peer in raggio BLE" : {
 
     },
     "nessun SOS sulla mappa" : {
+
+    },
+    "proximity radar" : {
 
     },
     "recording %@" : {
@@ -31422,6 +31443,9 @@
           }
         }
       }
+    },
+    "SOS map" : {
+
     },
     "system.chat.blocked" : {
       "extractionState" : "manual",
