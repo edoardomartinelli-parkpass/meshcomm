@@ -52,6 +52,7 @@ struct ContentView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var showSidebar = false
     @State private var showAppInfo = false
+    @State private var showSettings = false
     @State private var selectedMessageSender: String?
     @State private var selectedMessageSenderID: PeerID?
     @FocusState private var isNicknameFieldFocused: Bool
@@ -201,6 +202,9 @@ struct ContentView: View {
                 .environmentObject(viewModel)
                 .onAppear { viewModel.isAppInfoPresented = true }
                 .onDisappear { viewModel.isAppInfoPresented = false }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet(viewModel: viewModel)
         }
         .sheet(isPresented: Binding(
             get: { viewModel.showingFingerprintFor != nil && !showSidebar && viewModel.selectedPrivateChatPeer == nil },
@@ -811,7 +815,19 @@ struct ContentView: View {
 
     
     private var mainHeaderView: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 6) {
+            Button {
+                showSettings = true
+            } label: {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundColor(textColor)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Settings menu")
+
             Text(verbatim: "meshcomm/")
                 .font(.bitchatSystem(size: 18, weight: .medium, design: .monospaced))
                 .foregroundColor(textColor)
@@ -1698,5 +1714,177 @@ struct RadarRow: View {
         let m = row.reading.approxMeters
         if m < 10 { return String(format: "≈%.1f m", m) }
         return String(format: "≈%.0f m", m)
+    }
+}
+
+// MARK: - Settings Sheet (meshcomm)
+
+/// Drawer-style settings sheet opened from the hamburger button at the top
+/// of the chat header. Lets the user rename their callsign, browse SOS map
+/// and radar shortcuts, and trigger an emergency wipe.
+struct SettingsSheet: View {
+    @ObservedObject var viewModel: ChatViewModel
+    @Environment(\.dismiss) var dismiss
+    @State private var draftNickname: String = ""
+    @State private var savedToast: Bool = false
+
+    private let accent = Color(red: 0.851, green: 0.467, blue: 0.341)
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.crop.circle")
+                            .font(.system(size: 20, weight: .regular))
+                            .foregroundStyle(accent)
+                        TextField("callsign", text: $draftNickname)
+                            .font(.system(size: 16, design: .monospaced))
+                            .autocorrectionDisabled(true)
+                            #if os(iOS)
+                            .textInputAutocapitalization(.never)
+                            #endif
+                            .onSubmit { saveNickname() }
+                        Button("save") { saveNickname() }
+                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .foregroundStyle(canSave ? accent : .secondary)
+                            .disabled(!canSave)
+                    }
+                    if savedToast {
+                        Label("nickname salvato", systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(Color(red: 0.529, green: 0.682, blue: 0.420))
+                    }
+                } header: {
+                    Label("identity", systemImage: "person.text.rectangle")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                } footer: {
+                    Text("// callsign annunciato sui pacchetti HELLO. Visibile a tutti i peer.")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                }
+
+                Section {
+                    NavigationLink {
+                        SOSMapView(pins: viewModel.sosPins)
+                    } label: {
+                        Label {
+                            HStack {
+                                Text("SOS map")
+                                    .font(.system(size: 14, design: .monospaced))
+                                Spacer()
+                                Text("\(viewModel.sosPins.count)")
+                                    .font(.system(size: 12, design: .monospaced))
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            Image(systemName: "map")
+                                .foregroundStyle(accent)
+                        }
+                    }
+                    NavigationLink {
+                        RadarSheetView(viewModel: viewModel)
+                    } label: {
+                        Label {
+                            Text("proximity radar")
+                                .font(.system(size: 14, design: .monospaced))
+                        } icon: {
+                            Image(systemName: "dot.radiowaves.left.and.right")
+                                .foregroundStyle(accent)
+                        }
+                    }
+                } header: {
+                    Label("tools", systemImage: "wrench.and.screwdriver")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    Label {
+                        Text("meshcomm v1.0")
+                            .font(.system(size: 14, design: .monospaced))
+                    } icon: {
+                        Image(systemName: "antenna.radiowaves.left.and.right")
+                            .foregroundStyle(accent)
+                    }
+                    Label {
+                        Text("Fork of bitchat (Unlicense)")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    } icon: {
+                        Image(systemName: "arrow.triangle.branch")
+                            .foregroundStyle(.secondary)
+                    }
+                    Link(destination: URL(string: "https://github.com/edoardomartinelli-parkpass/meshcomm")!) {
+                        Label {
+                            Text("github / source")
+                                .font(.system(size: 13, design: .monospaced))
+                        } icon: {
+                            Image(systemName: "chevron.left.forwardslash.chevron.right")
+                                .foregroundStyle(accent)
+                        }
+                    }
+                } header: {
+                    Label("about", systemImage: "info.circle")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    Button(role: .destructive) {
+                        viewModel.panicClearAllData()
+                        dismiss()
+                    } label: {
+                        Label {
+                            Text("emergency wipe")
+                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        } icon: {
+                            Image(systemName: "trash")
+                        }
+                    }
+                } header: {
+                    Label("danger zone", systemImage: "exclamationmark.triangle")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundStyle(Color(red: 0.760, green: 0.330, blue: 0.314))
+                } footer: {
+                    Text("// cancella keypair, cronologia chat e pin SOS. Irreversibile.")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                    }
+                }
+            }
+            .onAppear {
+                draftNickname = viewModel.nickname
+            }
+        }
+    }
+
+    private var canSave: Bool {
+        let trimmed = draftNickname.trimmingCharacters(in: .whitespaces)
+        return !trimmed.isEmpty && trimmed != viewModel.nickname
+    }
+
+    private func saveNickname() {
+        let trimmed = draftNickname.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, trimmed != viewModel.nickname else { return }
+        viewModel.nickname = trimmed
+        viewModel.validateAndSaveNickname()
+        savedToast = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+            savedToast = false
+        }
     }
 }

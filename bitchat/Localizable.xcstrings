@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "// avvicinati a un altro device meshcomm e attendi qualche secondo" : {
+
+    },
     "// pin appariranno qui quando ricevi un broadcast [SOS] con coordinate" : {
 
     },
@@ -185,6 +188,9 @@
           }
         }
       }
+    },
+    "%@ dBm" : {
+
     },
     "app_info.app_name" : {
       "extractionState" : "manual",
@@ -31052,6 +31058,9 @@
           }
         }
       }
+    },
+    "nessun peer in raggio BLE" : {
+
     },
     "nessun SOS sulla mappa" : {
 
