@@ -57,6 +57,10 @@ struct ContentView: View {
     @State private var showSOSConfirm = false
     @State private var showSOSMapSheet = false
     @State private var showRadarSheet = false
+    @State private var showSideDrawer = false
+    @State private var showChannelMore = false
+    @State private var channelMuted = false
+    @State private var selectedTopic: String = "mesh"
     @StateObject private var composerSOSLocator = SOSLocationFetcher()
     @State private var selectedMessageSender: String?
     @State private var selectedMessageSenderID: PeerID?
@@ -216,6 +220,55 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showRadarSheet) {
             RadarSheetView(viewModel: viewModel)
+        }
+        .sheet(isPresented: $showChannelMore) {
+            ChannelMoreSheet(
+                topic: selectedTopic,
+                muted: $channelMuted,
+                memberCount: viewModel.allPeers.count,
+                onChannelInfo: {
+                    showChannelMore = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showAppInfo = true }
+                },
+                onMembers: {
+                    showChannelMore = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSidebar = true }
+                },
+                onShareLocation: {
+                    showChannelMore = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSOSConfirm = true }
+                },
+                onSearch: {
+                    showChannelMore = false
+                },
+                onLeave: {
+                    showChannelMore = false
+                    selectedTopic = "mesh"
+                }
+            )
+            .presentationDetents([.height(420)])
+            .presentationDragIndicator(.visible)
+        }
+        .overlay(alignment: .topLeading) {
+            if showSideDrawer {
+                SideDrawerView(
+                    isOpen: $showSideDrawer,
+                    selectedTopic: $selectedTopic,
+                    nickname: viewModel.nickname,
+                    nodeShortID: String(viewModel.meshService.myPeerID.prefix(4)),
+                    nodesActive: viewModel.allPeers.filter { $0.isConnected || $0.isReachable }.count,
+                    onOpenMap: {
+                        showSideDrawer = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSOSMapSheet = true }
+                    },
+                    onOpenSettings: {
+                        showSideDrawer = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSettings = true }
+                    }
+                )
+                .transition(.move(edge: .leading).combined(with: .opacity))
+                .zIndex(100)
+            }
         }
         .confirmationDialog(
             "Inviare SOS broadcast?",
@@ -961,7 +1014,9 @@ struct ContentView: View {
     private var mainHeaderView: some View {
         HStack(alignment: .center, spacing: 10) {
             Button {
-                showSettings = true
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                    showSideDrawer = true
+                }
             } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 18, weight: .regular))
@@ -970,7 +1025,7 @@ struct ContentView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Settings menu")
+            .accessibilityLabel("Side menu")
 
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text("CANALE")
@@ -995,17 +1050,11 @@ struct ContentView: View {
 
     @ViewBuilder
     private var channelTitleView: some View {
-        let channelName: String = {
-            switch locationManager.selectedChannel {
-            case .mesh: return "mesh"
-            case .location(let ch): return ch.geohash
-            }
-        }()
         HStack(spacing: 0) {
             Text("#")
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundColor(Self.meshAccent)
-            Text(channelName)
+            Text(selectedTopic)
                 .font(.system(size: 22, weight: .semibold))
                 .tracking(-0.4)
                 .foregroundColor(textColor)
@@ -1027,14 +1076,14 @@ struct ContentView: View {
                     String(localized: "content.accessibility.open_unread_private_chat", comment: "Accessibility label for the unread private chat button")
                 )
             }
-            Button(action: { showAppInfo = true }) {
+            Button(action: { showChannelMore = true }) {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 18, weight: .regular))
                     .foregroundColor(textColor)
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("More info")
+            .accessibilityLabel("Channel actions")
         }
     }
 
@@ -1853,6 +1902,307 @@ struct SettingsSheet: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
             savedToast = false
         }
+    }
+}
+
+// MARK: - Side drawer & channel more sheet (DESIGN.md §9, §5)
+
+/// Slide-from-left drawer matching the Claude design: profile card,
+/// 3-stat row (active nodes, hop max, battery), channels list, footer
+/// actions (map, settings). Tap a channel to set it as the active topic.
+struct SideDrawerView: View {
+    @Binding var isOpen: Bool
+    @Binding var selectedTopic: String
+    let nickname: String
+    let nodeShortID: String
+    let nodesActive: Int
+    let onOpenMap: () -> Void
+    let onOpenSettings: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    private static let accent = Color(red: 0.851, green: 0.467, blue: 0.341)
+    private static let danger = Color(red: 0.753, green: 0.212, blue: 0.173)
+
+    private struct DrawerChannel {
+        let name: String
+        let hint: String
+        let unread: Int
+        let danger: Bool
+    }
+
+    private let channels: [DrawerChannel] = [
+        DrawerChannel(name: "mesh", hint: "12 nodi", unread: 0, danger: false),
+        DrawerChannel(name: "rifugio", hint: "sofia, marco", unread: 2, danger: false),
+        DrawerChannel(name: "soccorso", hint: "solo SOS", unread: 0, danger: true),
+        DrawerChannel(name: "meteo", hint: "bot · ogni 30 min", unread: 4, danger: false),
+        DrawerChannel(name: "logs", hint: "sistema", unread: 0, danger: false)
+    ]
+
+    private var bg: Color {
+        colorScheme == .dark
+            ? Color(red: 0.043, green: 0.043, blue: 0.047)
+            : Color(red: 0.980, green: 0.980, blue: 0.969)
+    }
+    private var surface2: Color {
+        colorScheme == .dark
+            ? Color(red: 0.110, green: 0.110, blue: 0.122)
+            : Color(red: 0.949, green: 0.945, blue: 0.925)
+    }
+    private var muted: Color {
+        colorScheme == .dark ? Color.white.opacity(0.55) : Color.black.opacity(0.5)
+    }
+    private var faint: Color {
+        colorScheme == .dark ? Color.white.opacity(0.32) : Color.black.opacity(0.32)
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                Color.black.opacity(0.32)
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture { close() }
+
+                drawerContent
+                    .frame(width: min(geo.size.width * 0.82, 320))
+                    .frame(maxHeight: .infinity)
+                    .background(bg)
+                    .shadow(color: .black.opacity(0.18), radius: 30, x: 4, y: 0)
+            }
+        }
+        .ignoresSafeArea()
+    }
+
+    private var drawerContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            profileCard
+            statsRow
+            channelsHeader
+            channelsList
+            Spacer(minLength: 0)
+            footer
+        }
+        .padding(.top, 54)
+    }
+
+    private var profileCard: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Self.accent.opacity(0.18))
+                Text(String(nickname.prefix(2)).lowercased())
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Self.accent)
+            }
+            .frame(width: 40, height: 40)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("@\(nickname.isEmpty ? "edoardo" : nickname)")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("node · \(nodeShortID.isEmpty ? "7f3a" : nodeShortID) · online")
+                    .font(.system(size: 11))
+                    .monospacedDigit()
+                    .foregroundStyle(muted)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 14)
+    }
+
+    private var statsRow: some View {
+        HStack(spacing: 0) {
+            statCell(value: "\(nodesActive)", label: "nodi attivi")
+            Rectangle().fill(faint).frame(width: 0.5)
+            statCell(value: "3", label: "hop max")
+            Rectangle().fill(faint).frame(width: 0.5)
+            statCell(value: "87%", label: "batteria")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(surface2, in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 18)
+        .padding(.bottom, 14)
+    }
+
+    private func statCell(value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.system(size: 15, weight: .semibold))
+                .monospacedDigit()
+            Text(label)
+                .font(.system(size: 11.5))
+                .foregroundStyle(muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 8)
+    }
+
+    private var channelsHeader: some View {
+        Text("CANALI")
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(1.0)
+            .foregroundStyle(faint)
+            .padding(.horizontal, 18)
+            .padding(.top, 6)
+            .padding(.bottom, 8)
+    }
+
+    private var channelsList: some View {
+        VStack(spacing: 2) {
+            ForEach(channels, id: \.name) { ch in
+                Button {
+                    selectedTopic = ch.name
+                    close()
+                } label: {
+                    HStack(spacing: 12) {
+                        Text("#")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(ch.danger
+                                ? Self.danger
+                                : (ch.name == selectedTopic ? Self.accent : muted))
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(ch.name)
+                                .font(.system(size: 14, weight: ch.name == selectedTopic ? .semibold : .medium))
+                            Text(ch.hint)
+                                .font(.system(size: 11))
+                                .foregroundStyle(muted)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                        if ch.unread > 0 {
+                            Text("\(ch.unread)")
+                                .font(.system(size: 10.5, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1)
+                                .background(Self.accent, in: Capsule())
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(
+                        ch.name == selectedTopic ? surface2 : .clear,
+                        in: RoundedRectangle(cornerRadius: 10)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 10)
+    }
+
+    private var footer: some View {
+        VStack(spacing: 2) {
+            Rectangle().fill(faint).frame(height: 0.5)
+                .padding(.bottom, 4)
+            footerItem(icon: "map", label: "mappa nodi", action: onOpenMap)
+            footerItem(icon: "ellipsis", label: "impostazioni", action: onOpenSettings)
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 22)
+    }
+
+    private func footerItem(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(muted)
+                    .frame(width: 24)
+                Text(label)
+                    .font(.system(size: 14))
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func close() {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+            isOpen = false
+        }
+    }
+}
+
+/// Bottom-sheet matching the Claude design: title (CANALE + #topic),
+/// then a vertical list of 6 actions (silenzia, info, membri, condividi
+/// posizione live, cerca, esci). Routes back to existing flows via the
+/// provided closures.
+struct ChannelMoreSheet: View {
+    let topic: String
+    @Binding var muted: Bool
+    let memberCount: Int
+    let onChannelInfo: () -> Void
+    let onMembers: () -> Void
+    let onShareLocation: () -> Void
+    let onSearch: () -> Void
+    let onLeave: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+
+    private static let accent = Color(red: 0.851, green: 0.467, blue: 0.341)
+    private static let danger = Color(red: 0.753, green: 0.212, blue: 0.173)
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            actions
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 6)
+    }
+
+    private var header: some View {
+        VStack(spacing: 2) {
+            Text("canale")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            HStack(spacing: 0) {
+                Text("#")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(Self.accent)
+                Text(topic)
+                    .font(.system(size: 20, weight: .semibold))
+                    .tracking(-0.2)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.bottom, 8)
+    }
+
+    private var actions: some View {
+        VStack(spacing: 0) {
+            row(icon: "antenna.radiowaves.left.and.right", label: muted ? "riattiva notifiche" : "silenzia canale") {
+                muted.toggle()
+                dismiss()
+            }
+            row(icon: "ellipsis", label: "info canale", action: onChannelInfo)
+            row(icon: "line.3.horizontal", label: "membri (\(memberCount))", action: onMembers)
+            row(icon: "mappin.and.ellipse", label: "condividi posizione live", action: onShareLocation)
+            row(icon: "map", label: "cerca nei messaggi", action: onSearch)
+            row(icon: "exclamationmark.octagon", label: "esci dal canale", danger: true, action: onLeave)
+        }
+        .padding(.horizontal, 10)
+    }
+
+    private func row(icon: String, label: String, danger: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .regular))
+                    .frame(width: 26)
+                Text(label)
+                    .font(.system(size: 15))
+                Spacer()
+            }
+            .foregroundStyle(danger ? Self.danger : Color.primary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
     }
 }
 
