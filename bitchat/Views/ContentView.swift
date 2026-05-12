@@ -1275,7 +1275,6 @@ struct ContentView: View {
         }
         .background(backgroundColor.opacity(0.95))
     }
-
 }
 
 // MARK: - Helper Views
