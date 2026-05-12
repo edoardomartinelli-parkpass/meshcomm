@@ -9,10 +9,10 @@
 import SwiftUI
 import BitFoundation
 
-/// Telegram/WhatsApp-style chat bubble. Outgoing messages are right-aligned
-/// in an orange-tinted bubble, incoming messages are left-aligned with the
-/// sender label on top in a per-nickname stable hue. SOS broadcasts get a
-/// red emergency frame regardless of direction.
+/// Telegram/WhatsApp-style chat bubble matching the design tokens in
+/// `DESIGN.md`. Outgoing bubbles are accent-fill with white text and right
+/// aligned; incoming bubbles are `surface2` with primary text and left
+/// aligned. SOS broadcasts get a red emergency frame regardless of direction.
 struct TextMessageView: View {
     @Environment(\.colorScheme) private var colorScheme: ColorScheme
     @EnvironmentObject private var viewModel: ChatViewModel
@@ -20,7 +20,7 @@ struct TextMessageView: View {
     let message: BitchatMessage
     @State private var expandedMessageIDs: Set<String> = []
 
-    private static let accent = Color(red: 0.851, green: 0.467, blue: 0.341)
+    private static let accent = Color(red: 0.851, green: 0.467, blue: 0.341) // #D97757
 
     private var isOwnMessage: Bool {
         message.sender == viewModel.nickname
@@ -30,16 +30,21 @@ struct TextMessageView: View {
         message.content.hasPrefix("[SOS]")
     }
 
-    private var bubbleFill: Color {
-        if isSOS { return Color.red.opacity(0.18) }
-        if isOwnMessage { return Self.accent.opacity(colorScheme == .dark ? 0.22 : 0.18) }
-        return colorScheme == .dark ? Color(white: 0.13) : Color(white: 0.93)
+    private var incomingBg: Color {
+        // #F1EFEA light, #1A1A1D dark
+        colorScheme == .dark
+            ? Color(red: 0.102, green: 0.102, blue: 0.114)
+            : Color(red: 0.945, green: 0.937, blue: 0.918)
     }
 
-    private var bubbleBorder: Color {
-        if isSOS { return Color.red.opacity(0.7) }
-        if isOwnMessage { return Self.accent.opacity(0.55) }
-        return colorScheme == .dark ? Color(white: 0.22) : Color(white: 0.78)
+    private var bubbleFill: Color {
+        if isSOS { return Color(red: 0.753, green: 0.212, blue: 0.173).opacity(0.14) }
+        return isOwnMessage ? Self.accent : incomingBg
+    }
+
+    private var bubbleText: Color {
+        if isSOS { return Color(red: 0.753, green: 0.212, blue: 0.173) }
+        return isOwnMessage ? .white : .primary
     }
 
     private var senderColor: Color {
@@ -48,29 +53,50 @@ struct TextMessageView: View {
         let hue = Double(hash % 360) / 360.0
         return colorScheme == .dark
             ? Color(hue: hue, saturation: 0.45, brightness: 0.92)
-            : Color(hue: hue, saturation: 0.65, brightness: 0.55)
+            : Color(hue: hue, saturation: 0.55, brightness: 0.50)
+    }
+
+    private var faint: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.32)
+            : Color.black.opacity(0.32)
     }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
             if isOwnMessage { Spacer(minLength: 60) }
 
-            bubble
+            VStack(alignment: isOwnMessage ? .trailing : .leading, spacing: 3) {
+                if !isOwnMessage && !isSOS {
+                    Text(message.sender)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(senderColor)
+                        .padding(.leading, 4)
+                }
+
+                bubble
+
+                footer
+            }
 
             if !isOwnMessage { Spacer(minLength: 60) }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 1)
+        .padding(.vertical, 2)
     }
 
     private var bubble: some View {
         VStack(alignment: .leading, spacing: 4) {
             if isSOS {
-                sosHeader
-            } else if !isOwnMessage {
-                Text(message.sender)
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .foregroundStyle(senderColor)
+                HStack(spacing: 5) {
+                    Image(systemName: "exclamationmark.octagon")
+                        .font(.system(size: 13, weight: .regular))
+                    Text("SOS")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(message.sender)
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .foregroundStyle(Color(red: 0.753, green: 0.212, blue: 0.173))
             }
 
             content
@@ -80,41 +106,33 @@ struct TextMessageView: View {
             }
 
             paymentChips
-
-            footer
         }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 7)
-        .background(bubbleFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(bubbleBorder, lineWidth: 1)
+        .padding(.horizontal, 13)
+        .padding(.vertical, 9)
+        .background(
+            bubbleFill,
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
-    }
-
-    private var sosHeader: some View {
-        HStack(spacing: 5) {
-            Image(systemName: "exclamationmark.octagon.fill")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Color.red)
-            Text("SOS")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundStyle(Color.red)
-            Text(message.sender)
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundStyle(.primary)
-        }
+        .overlay(
+            Group {
+                if isSOS {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color(red: 0.753, green: 0.212, blue: 0.173).opacity(0.6), lineWidth: 1)
+                }
+            }
+        )
     }
 
     private var content: some View {
         let isExpanded = expandedMessageIDs.contains(message.id)
         let lineLimit: Int? = (isLong && !isExpanded) ? TransportConfig.uiLongMessageLineLimit : nil
         return Text(message.content)
-            .font(.system(size: 14, design: .monospaced))
+            .font(.system(size: 15))
+            .lineSpacing(2)
             .lineLimit(lineLimit)
             .fixedSize(horizontal: false, vertical: true)
             .textSelection(.enabled)
-            .foregroundStyle(.primary)
+            .foregroundStyle(bubbleText)
     }
 
     private var expandButton: some View {
@@ -126,8 +144,8 @@ struct TextMessageView: View {
             if isExpanded { expandedMessageIDs.remove(message.id) }
             else { expandedMessageIDs.insert(message.id) }
         }
-        .font(.bitchatSystem(size: 11, weight: .medium, design: .monospaced))
-        .foregroundColor(Self.accent)
+        .font(.system(size: 11, weight: .medium))
+        .foregroundColor(isOwnMessage ? .white.opacity(0.85) : Self.accent)
         .padding(.top, 2)
     }
 
@@ -150,15 +168,16 @@ struct TextMessageView: View {
 
     private var footer: some View {
         HStack(spacing: 4) {
-            Spacer(minLength: 0)
             Text(message.formattedTimestamp)
-                .font(.system(size: 9, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 10.5))
+                .monospacedDigit()
+                .foregroundStyle(faint)
             if message.isPrivate && isOwnMessage,
                let status = message.deliveryStatus {
                 DeliveryStatusView(status: status)
             }
         }
+        .padding(.horizontal, 6)
     }
 
     private var isLong: Bool {

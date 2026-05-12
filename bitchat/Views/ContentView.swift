@@ -53,6 +53,11 @@ struct ContentView: View {
     @State private var showSidebar = false
     @State private var showAppInfo = false
     @State private var showSettings = false
+    @State private var showComposerActions = false
+    @State private var showSOSConfirm = false
+    @State private var showSOSMapSheet = false
+    @State private var showRadarSheet = false
+    @StateObject private var composerSOSLocator = SOSLocationFetcher()
     @State private var selectedMessageSender: String?
     @State private var selectedMessageSenderID: PeerID?
     @FocusState private var isNicknameFieldFocused: Bool
@@ -206,6 +211,30 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsSheet(viewModel: viewModel)
         }
+        .sheet(isPresented: $showSOSMapSheet) {
+            SOSMapView(pins: viewModel.sosPins)
+        }
+        .sheet(isPresented: $showRadarSheet) {
+            RadarSheetView(viewModel: viewModel)
+        }
+        .confirmationDialog(
+            "Inviare SOS broadcast?",
+            isPresented: $showSOSConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Invia SOS", role: .destructive) {
+                Task { @MainActor in
+                    let coord = await composerSOSLocator.fetchOnce()
+                    viewModel.sendSOSMessage(
+                        latitude: coord?.latitude,
+                        longitude: coord?.longitude
+                    )
+                }
+            }
+            Button("Annulla", role: .cancel) {}
+        } message: {
+            Text("Verra' broadcastata in chiaro la tua posizione e il nickname a tutti i nodi mesh raggiungibili (max 7 hop).")
+        }
         .sheet(isPresented: Binding(
             get: { viewModel.showingFingerprintFor != nil && !showSidebar && viewModel.selectedPrivateChatPeer == nil },
             set: { _ in viewModel.showingFingerprintFor = nil }
@@ -328,62 +357,142 @@ struct ContentView: View {
                 recordingIndicator
             }
 
-            HStack(alignment: .center, spacing: 10) {
-                TextField(
-                    "",
-                    text: $messageText,
-                    prompt: Text(
-                        String(localized: "content.input.message_placeholder", comment: "Placeholder shown in the chat composer")
-                    )
-                    .foregroundColor(secondaryTextColor.opacity(0.55))
-                )
-                .textFieldStyle(.plain)
-                .font(.bitchatSystem(size: 15, design: .monospaced))
-                .foregroundColor(textColor)
-                .focused($isTextFieldFocused)
-                .autocorrectionDisabled(true)
-#if os(iOS)
-                .textInputAutocapitalization(.sentences)
-#endif
-                .submitLabel(.send)
-                .onSubmit { sendMessage() }
-                .modifier(FocusEffectDisabledModifier())
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .onChange(of: messageText) { newValue in
-                    autocompleteDebounceTimer?.invalidate()
-                    autocompleteDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: false) { [weak viewModel] _ in
-                        let cursorPosition = newValue.count
-                        Task { @MainActor in
-                            viewModel?.updateAutocomplete(for: newValue, cursorPosition: cursorPosition)
-                        }
-                    }
-                }
-
-                HStack(alignment: .center, spacing: 14) {
-                    SOSMapButton(viewModel: viewModel)
-                    RadarButton(viewModel: viewModel)
-                    SOSButton(viewModel: viewModel)
-                    if shouldShowMediaControls {
-                        attachmentButton
-                    }
-                    sendOrMicButton
-                }
+            if showComposerActions {
+                composerActionDrawer
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(colorScheme == .dark ? Color(white: 0.10) : Color(white: 0.95))
-            )
-            .overlay(
-                Capsule(style: .continuous)
-                    .stroke(secondaryTextColor.opacity(0.18), lineWidth: 1)
-            )
+
+            HStack(alignment: .center, spacing: 8) {
+                composerPlusButton
+                composerTextFieldPill
+                composerSendOrMicButton
+            }
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 12)
         .padding(.top, 6)
         .padding(.bottom, 10)
         .background(backgroundColor.opacity(0.95))
+    }
+
+    // MARK: - Composer subviews (DESIGN.md §5, §13)
+
+    private var meshSurface2: Color {
+        colorScheme == .dark
+            ? Color(red: 0.110, green: 0.110, blue: 0.122) // #1C1C1F
+            : Color(red: 0.949, green: 0.945, blue: 0.925) // #F2F1EC
+    }
+
+    private static let meshAccent = Color(red: 0.851, green: 0.467, blue: 0.341) // #D97757
+
+    private var composerPlusButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showComposerActions.toggle()
+            }
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 22, weight: .regular))
+                .foregroundColor(textColor)
+                .rotationEffect(.degrees(showComposerActions ? 45 : 0))
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(meshSurface2))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Show actions")
+    }
+
+    private var composerTextFieldPill: some View {
+        HStack(spacing: 0) {
+            TextField(
+                "",
+                text: $messageText,
+                prompt: Text(
+                    String(localized: "content.input.message_placeholder", comment: "Placeholder shown in the chat composer")
+                )
+                .foregroundColor(secondaryTextColor.opacity(0.55))
+            )
+            .textFieldStyle(.plain)
+            .font(.system(size: 15))
+            .foregroundColor(textColor)
+            .focused($isTextFieldFocused)
+            .autocorrectionDisabled(true)
+#if os(iOS)
+            .textInputAutocapitalization(.sentences)
+#endif
+            .submitLabel(.send)
+            .onSubmit { sendMessage() }
+            .modifier(FocusEffectDisabledModifier())
+            .onChange(of: messageText) { newValue in
+                autocompleteDebounceTimer?.invalidate()
+                autocompleteDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: false) { [weak viewModel] _ in
+                    let cursorPosition = newValue.count
+                    Task { @MainActor in
+                        viewModel?.updateAutocomplete(for: newValue, cursorPosition: cursorPosition)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 38)
+        .background(Capsule(style: .continuous).fill(meshSurface2))
+    }
+
+    @ViewBuilder
+    private var composerSendOrMicButton: some View {
+        let hasText = !messageText.trimmed.isEmpty
+        if shouldShowVoiceControl && !hasText {
+            micButtonView
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(meshSurface2))
+        } else {
+            Button(action: sendMessage) {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(hasText ? .white : textColor.opacity(0.4))
+                    .frame(width: 38, height: 38)
+                    .background(Circle().fill(hasText ? Self.meshAccent : meshSurface2))
+            }
+            .buttonStyle(.plain)
+            .disabled(!hasText)
+            .accessibilityLabel(
+                String(localized: "content.accessibility.send_message", comment: "Accessibility label for the send message button")
+            )
+        }
+    }
+
+    private var composerActionDrawer: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ComposerActionTile(
+                    icon: "exclamationmark.octagon",
+                    label: "sos",
+                    danger: true
+                ) {
+                    closeActionsAnd { showSOSConfirm = true }
+                }
+                ComposerActionTile(icon: "map", label: "mappa") {
+                    closeActionsAnd { showSOSMapSheet = true }
+                }
+                ComposerActionTile(icon: "dot.radiowaves.left.and.right", label: "radar") {
+                    closeActionsAnd { showRadarSheet = true }
+                }
+#if os(iOS)
+                ComposerActionTile(icon: "camera", label: "foto") {
+                    closeActionsAnd {
+                        imagePickerSourceType = .photoLibrary
+                        showImagePicker = true
+                    }
+                }
+#endif
+            }
+            .padding(.horizontal, 2)
+        }
+        .frame(height: 78)
+    }
+
+    private func closeActionsAnd(_ then: @escaping () -> Void) {
+        withAnimation(.easeInOut(duration: 0.18)) { showComposerActions = false }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.20, execute: then)
     }
 
     // MARK: - Actions
@@ -1881,5 +1990,55 @@ struct SettingsSheet: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
             savedToast = false
         }
+    }
+}
+
+// MARK: - Composer Action Tile (DESIGN.md §5)
+
+/// Square tile shown inside the composer action drawer. Layout matches
+/// the design tokens: 60pt min width, 14pt radius, surface2 background
+/// (or pale-red for danger variant), 22pt icon + 10.5pt label.
+struct ComposerActionTile: View {
+    let icon: String
+    let label: String
+    var danger: Bool = false
+    let action: () -> Void
+    @Environment(\.colorScheme) var colorScheme
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 22, weight: .regular))
+                Text(label)
+                    .font(.system(size: 10.5, weight: .medium))
+            }
+            .foregroundColor(foreground)
+            .frame(minWidth: 60)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(background)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var foreground: Color {
+        if danger { return Color(red: 0.753, green: 0.212, blue: 0.173) } // #C0362C
+        return colorScheme == .dark ? .white : .black
+    }
+
+    private var background: Color {
+        if danger {
+            // #FEE9E7 light, danger 14% alpha dark
+            return colorScheme == .dark
+                ? Color(red: 0.753, green: 0.212, blue: 0.173).opacity(0.18)
+                : Color(red: 0.996, green: 0.913, blue: 0.906)
+        }
+        return colorScheme == .dark
+            ? Color(red: 0.110, green: 0.110, blue: 0.122)
+            : Color(red: 0.949, green: 0.945, blue: 0.925)
     }
 }
