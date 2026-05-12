@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>meshcomm</string>
+	<string>OpenChat</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -34,17 +34,17 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>meshcomm uses Bluetooth to create an offline mesh network for emergency communication when no internet is available.</string>
+	<string>OpenChat uses Bluetooth to create an offline mesh network for emergency communication when no internet is available.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>meshcomm uses Bluetooth to discover and connect with other meshcomm devices nearby.</string>
+	<string>OpenChat uses Bluetooth to discover and connect with other OpenChat devices nearby.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>meshcomm uses the camera to scan QR codes to verify peers.</string>
+	<string>OpenChat uses the camera to scan QR codes to verify peers.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>meshcomm uses your location for SOS broadcasts and to compute local geohash channels for nearby public chat. Location is shared only when you tap SOS.</string>
+	<string>OpenChat uses your location for SOS broadcasts and to compute local geohash channels for nearby public chat. Location is shared only when you tap SOS.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>meshcomm uses the microphone to record voice notes that relay across the mesh.</string>
+	<string>OpenChat uses the microphone to record voice notes that relay across the mesh.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>meshcomm lets you pick images from your photo library to share with nearby peers.</string>
+	<string>OpenChat lets you pick images from your photo library to share with nearby peers.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>

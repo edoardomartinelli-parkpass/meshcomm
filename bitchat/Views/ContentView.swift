@@ -1971,7 +1971,7 @@ struct SettingsSheet: View {
         Section {
             HStack {
                 Label {
-                    Text("meshcomm").font(.system(size: 15))
+                    Text("OpenChat").font(.system(size: 15))
                 } icon: {
                     Image(systemName: "antenna.radiowaves.left.and.right").foregroundStyle(accent)
                 }

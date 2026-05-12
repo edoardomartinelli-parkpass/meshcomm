@@ -7,7 +7,7 @@
     "@%@" : {
 
     },
-    "// avvicinati a un altro device meshcomm e attendi qualche secondo" : {
+    "// avvicinati a un altro device OpenChat e attendi qualche secondo" : {
 
     },
     "// pin appariranno qui quando ricevi un broadcast [SOS] con coordinate" : {
@@ -220,175 +220,175 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "bn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "fil" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "ms" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "ne" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "ur" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm"
+            "value" : "OpenChat"
           }
         }
       }
@@ -12437,25 +12437,25 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth متوقف. فعّل bluetooth في الإعدادات لاستخدام meshcomm."
+            "value" : "bluetooth متوقف. فعّل bluetooth في الإعدادات لاستخدام OpenChat."
           }
         },
         "bn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ব্লুটুথ বন্ধ আছে। meshcomm ব্যবহার করতে সেটিংসে ব্লুটুথ চালু করুন।"
+            "value" : "ব্লুটুথ বন্ধ আছে। OpenChat ব্যবহার করতে সেটিংসে ব্লুটুথ চালু করুন।"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth ist ausgeschaltet. aktiviere bluetooth in den einstellungen, um meshcomm zu verwenden."
+            "value" : "bluetooth ist ausgeschaltet. aktiviere bluetooth in den einstellungen, um OpenChat zu verwenden."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth is turned off. please turn on bluetooth in settings to use meshcomm."
+            "value" : "bluetooth is turned off. please turn on bluetooth in settings to use OpenChat."
           }
         },
         "es" : {
@@ -12467,145 +12467,145 @@
         "fil" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "naka-off ang bluetooth. pakibuksan sa settings para magamit ang meshcomm."
+            "value" : "naka-off ang bluetooth. pakibuksan sa settings para magamit ang OpenChat."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth est désactivé. active le bluetooth dans réglages pour utiliser meshcomm."
+            "value" : "bluetooth est désactivé. active le bluetooth dans réglages pour utiliser OpenChat."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth כבוי. הפעל bluetooth בהגדרות כדי להשתמש ב-meshcomm."
+            "value" : "bluetooth כבוי. הפעל bluetooth בהגדרות כדי להשתמש ב-OpenChat."
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ब्लूटूथ बंद है। meshcomm उपयोग करने के लिए सेटिंग्स में ब्लूटूथ चालू करें।"
+            "value" : "ब्लूटूथ बंद है। OpenChat उपयोग करने के लिए सेटिंग्स में ब्लूटूथ चालू करें।"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth dimatikan. aktifkan bluetooth di pengaturan untuk memakai meshcomm."
+            "value" : "bluetooth dimatikan. aktifkan bluetooth di pengaturan untuk memakai OpenChat."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth è disattivato. attiva bluetooth nelle impostazioni per usare meshcomm."
+            "value" : "bluetooth è disattivato. attiva bluetooth nelle impostazioni per usare OpenChat."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetoothがオフです。設定でbluetoothをオンにしてmeshcommを使ってください。"
+            "value" : "bluetoothがオフです。設定でbluetoothをオンにしてOpenChatを使ってください。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth가 꺼져 있습니다. meshcomm을 사용하려면 설정에서 bluetooth를 켜주세요."
+            "value" : "bluetooth가 꺼져 있습니다. OpenChat을 사용하려면 설정에서 bluetooth를 켜주세요."
           }
         },
         "ms" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bluetooth dimatikan. Hidupkan Bluetooth dalam Tetapan untuk menggunakan meshcomm."
+            "value" : "Bluetooth dimatikan. Hidupkan Bluetooth dalam Tetapan untuk menggunakan OpenChat."
           }
         },
         "ne" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth बन्द छ। meshcomm प्रयोग गर्न bluetooth सेटिङमा अन गर।"
+            "value" : "bluetooth बन्द छ। OpenChat प्रयोग गर्न bluetooth सेटिङमा अन गर।"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth staat uit. zet bluetooth aan in instellingen om meshcomm te gebruiken."
+            "value" : "bluetooth staat uit. zet bluetooth aan in instellingen om OpenChat te gebruiken."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth jest wyłączony. włącz bluetooth w ustawieniach, aby używać meshcomm."
+            "value" : "bluetooth jest wyłączony. włącz bluetooth w ustawieniach, aby używać OpenChat."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Bluetooth está desligado. Ativa o Bluetooth em Definições para usar o meshcomm."
+            "value" : "O Bluetooth está desligado. Ativa o Bluetooth em Definições para usar o OpenChat."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth está desligado. ative o bluetooth em ajustes para usar meshcomm."
+            "value" : "bluetooth está desligado. ative o bluetooth em ajustes para usar OpenChat."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth выключен. включи bluetooth в настройках, чтобы использовать meshcomm."
+            "value" : "bluetooth выключен. включи bluetooth в настройках, чтобы использовать OpenChat."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth är avstängt. slå på bluetooth i inställningar för att använda meshcomm."
+            "value" : "bluetooth är avstängt. slå på bluetooth i inställningar för att använda OpenChat."
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bluetooth அணைக்கப்பட்டுள்ளது. meshcomm பயன்படுத்த அமைப்பில் Bluetooth ஐ இயக்கவும்."
+            "value" : "Bluetooth அணைக்கப்பட்டுள்ளது. OpenChat பயன்படுத்த அமைப்பில் Bluetooth ஐ இயக்கவும்."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ปิด Bluetooth อยู่ กรุณาเปิดในตั้งค่าเพื่อใช้ meshcomm"
+            "value" : "ปิด Bluetooth อยู่ กรุณาเปิดในตั้งค่าเพื่อใช้ OpenChat"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bluetooth kapalı. meshcomm'i kullanmak için ayarlardan Bluetooth'u açın."
+            "value" : "Bluetooth kapalı. OpenChat'i kullanmak için ayarlardan Bluetooth'u açın."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth вимкнений. увімкни bluetooth у налаштуваннях, щоб користуватися meshcomm."
+            "value" : "bluetooth вимкнений. увімкни bluetooth у налаштуваннях, щоб користуватися OpenChat."
           }
         },
         "ur" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bluetooth بند ہے۔ meshcomm استعمال کرنے کیلئے سیٹنگز میں Bluetooth آن کریں۔"
+            "value" : "Bluetooth بند ہے۔ OpenChat استعمال کرنے کیلئے سیٹنگز میں Bluetooth آن کریں۔"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth đang tắt. hãy bật trong cài đặt để dùng meshcomm."
+            "value" : "bluetooth đang tắt. hãy bật trong cài đặt để dùng OpenChat."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth 已关闭。请在设置中开启以使用 meshcomm。"
+            "value" : "bluetooth 已关闭。请在设置中开启以使用 OpenChat。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bluetooth 已關閉。請在設定中開啟以使用 meshcomm。"
+            "value" : "bluetooth 已關閉。請在設定中開啟以使用 OpenChat。"
           }
         }
       }
@@ -12616,25 +12616,25 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تحتاج meshcomm إلى إذن bluetooth للاتصال بالأجهزة القريبة. فعّل الوصول في الإعدادات."
+            "value" : "تحتاج OpenChat إلى إذن bluetooth للاتصال بالأجهزة القريبة. فعّل الوصول في الإعدادات."
           }
         },
         "bn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "নিকটবর্তী ডিভাইসের সাথে যুক্ত হতে meshcomm-এর ব্লুটুথ অনুমতি দরকার। দয়া করে সেটিংসে ব্লুটুথ অ্যাক্সেস সক্রিয় করুন।"
+            "value" : "নিকটবর্তী ডিভাইসের সাথে যুক্ত হতে OpenChat-এর ব্লুটুথ অনুমতি দরকার। দয়া করে সেটিংসে ব্লুটুথ অ্যাক্সেস সক্রিয় করুন।"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm benötigt bluetooth-berechtigung, um sich mit geräten in der nähe zu verbinden. erlaube den zugriff in den einstellungen."
+            "value" : "OpenChat benötigt bluetooth-berechtigung, um sich mit geräten in der nähe zu verbinden. erlaube den zugriff in den einstellungen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm needs bluetooth permission to connect with nearby devices. please enable bluetooth access in settings."
+            "value" : "OpenChat needs bluetooth permission to connect with nearby devices. please enable bluetooth access in settings."
           }
         },
         "es" : {
@@ -12646,145 +12646,145 @@
         "fil" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "kailangan ng meshcomm ng pahintulot sa bluetooth upang kumonekta sa mga kalapit na device. pakiactivate sa settings."
+            "value" : "kailangan ng OpenChat ng pahintulot sa bluetooth upang kumonekta sa mga kalapit na device. pakiactivate sa settings."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm a besoin de l'autorisation bluetooth pour se connecter aux appareils proches. active l'accès dans réglages."
+            "value" : "OpenChat a besoin de l'autorisation bluetooth pour se connecter aux appareils proches. active l'accès dans réglages."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm צריכה הרשאת bluetooth כדי להתחבר למכשירים קרובים. אפשר גישה בהגדרות."
+            "value" : "OpenChat צריכה הרשאת bluetooth כדי להתחבר למכשירים קרובים. אפשר גישה בהגדרות."
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm को पास के उपकरणों से जुड़ने के लिए ब्लूटूथ अनुमति चाहिए। कृपया सेटिंग्स में ब्लूटूथ एक्सेस सक्षम करें।"
+            "value" : "OpenChat को पास के उपकरणों से जुड़ने के लिए ब्लूटूथ अनुमति चाहिए। कृपया सेटिंग्स में ब्लूटूथ एक्सेस सक्षम करें।"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm memerlukan izin bluetooth untuk terhubung dengan perangkat dekat. aktifkan akses di pengaturan."
+            "value" : "OpenChat memerlukan izin bluetooth untuk terhubung dengan perangkat dekat. aktifkan akses di pengaturan."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm richiede l'autorizzazione bluetooth per collegarsi ai dispositivi vicini. abilita l'accesso nelle impostazioni."
+            "value" : "OpenChat richiede l'autorizzazione bluetooth per collegarsi ai dispositivi vicini. abilita l'accesso nelle impostazioni."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcommは近くのデバイスと接続するためbluetooth権限が必要です。設定でアクセスを有効にしてください。"
+            "value" : "OpenChatは近くのデバイスと接続するためbluetooth権限が必要です。設定でアクセスを有効にしてください。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm은 주변 기기와 연결하기 위해 bluetooth 권한이 필요합니다. 설정에서 bluetooth 접근을 활성화해주세요."
+            "value" : "OpenChat은 주변 기기와 연결하기 위해 bluetooth 권한이 필요합니다. 설정에서 bluetooth 접근을 활성화해주세요."
           }
         },
         "ms" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm memerlukan kebenaran Bluetooth untuk disambungkan kepada peranti berhampiran. Benarkan capaian dalam Tetapan."
+            "value" : "OpenChat memerlukan kebenaran Bluetooth untuk disambungkan kepada peranti berhampiran. Benarkan capaian dalam Tetapan."
           }
         },
         "ne" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm लाई नजिकका उपकरणसँग जडान हुन bluetooth अनुमति चाहिन्छ। सेटिङमा पहुँच सक्षम गर।"
+            "value" : "OpenChat लाई नजिकका उपकरणसँग जडान हुन bluetooth अनुमति चाहिन्छ। सेटिङमा पहुँच सक्षम गर।"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm heeft bluetooth-toegang nodig om verbinding te maken met apparaten in de buurt. schakel dit in bij instellingen."
+            "value" : "OpenChat heeft bluetooth-toegang nodig om verbinding te maken met apparaten in de buurt. schakel dit in bij instellingen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm potrzebuje uprawnień bluetooth, aby łączyć się z pobliskimi urządzeniami. włącz dostęp w ustawieniach."
+            "value" : "OpenChat potrzebuje uprawnień bluetooth, aby łączyć się z pobliskimi urządzeniami. włącz dostęp w ustawieniach."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O meshcomm precisa de autorização de Bluetooth para se ligar a dispositivos próximos. Ativa o acesso em Definições."
+            "value" : "O OpenChat precisa de autorização de Bluetooth para se ligar a dispositivos próximos. Ativa o acesso em Definições."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm precisa de permissão de bluetooth para conectar com dispositivos próximos. habilite o acesso em ajustes."
+            "value" : "OpenChat precisa de permissão de bluetooth para conectar com dispositivos próximos. habilite o acesso em ajustes."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm нужен доступ к bluetooth, чтобы соединяться с ближайшими устройствами. включи разрешение в настройках."
+            "value" : "OpenChat нужен доступ к bluetooth, чтобы соединяться с ближайшими устройствами. включи разрешение в настройках."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm behöver bluetooth-behörighet för att ansluta till enheter i närheten. aktivera åtkomst i inställningar."
+            "value" : "OpenChat behöver bluetooth-behörighet för att ansluta till enheter i närheten. aktivera åtkomst i inställningar."
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "அருகிலுள்ள சாதனங்களை இணைக்க meshcomm க்கு Bluetooth அனுமதி தேவை. அமைப்பில் அனுமதி வழங்கவும்."
+            "value" : "அருகிலுள்ள சாதனங்களை இணைக்க OpenChat க்கு Bluetooth அனுமதி தேவை. அமைப்பில் அனுமதி வழங்கவும்."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm ต้องการสิทธิ์ Bluetooth เพื่อเชื่อมต่อกับอุปกรณ์ใกล้เคียง กรุณาเปิดสิทธิ์ในตั้งค่า"
+            "value" : "OpenChat ต้องการสิทธิ์ Bluetooth เพื่อเชื่อมต่อกับอุปกรณ์ใกล้เคียง กรุณาเปิดสิทธิ์ในตั้งค่า"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm'in yakın cihazlara bağlanması için Bluetooth izni gerekir. lütfen ayarlardan Bluetooth erişimini etkinleştirin."
+            "value" : "OpenChat'in yakın cihazlara bağlanması için Bluetooth izni gerekir. lütfen ayarlardan Bluetooth erişimini etkinleştirin."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm потребує дозволу bluetooth для з'єднання з пристроями поруч. ввімкни доступ у налаштуваннях."
+            "value" : "OpenChat потребує дозволу bluetooth для з'єднання з пристроями поруч. ввімкни доступ у налаштуваннях."
           }
         },
         "ur" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "قریب کے آلات سے جڑنے کیلئے meshcomm کو Bluetooth اجازت درکار ہے۔ سیٹنگز میں رسائی فعال کریں۔"
+            "value" : "قریب کے آلات سے جڑنے کیلئے OpenChat کو Bluetooth اجازت درکار ہے۔ سیٹنگز میں رسائی فعال کریں۔"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm cần quyền bluetooth để kết nối thiết bị gần. hãy bật quyền trong cài đặt."
+            "value" : "OpenChat cần quyền bluetooth để kết nối thiết bị gần. hãy bật quyền trong cài đặt."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm 需要 bluetooth 权限以连接附近设备。请在设置中启用访问。"
+            "value" : "OpenChat 需要 bluetooth 权限以连接附近设备。请在设置中启用访问。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meshcomm 需要 bluetooth 權限以連線至附近裝置。請在設定中啟用存取權限。"
+            "value" : "OpenChat 需要 bluetooth 權限以連線至附近裝置。請在設定中啟用存取權限。"
           }
         }
       }
@@ -13153,25 +13153,25 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "هذا الجهاز لا يدعم bluetooth. يحتاج meshcomm إلى bluetooth للعمل."
+            "value" : "هذا الجهاز لا يدعم bluetooth. يحتاج OpenChat إلى bluetooth للعمل."
           }
         },
         "bn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "এই ডিভাইস ব্লুটুথ সমর্থন করে না। meshcomm চালাতে ব্লুটুথ দরকার।"
+            "value" : "এই ডিভাইস ব্লুটুথ সমর্থন করে না। OpenChat চালাতে ব্লুটুথ দরকার।"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "dieses gerät unterstützt kein bluetooth. meshcomm benötigt bluetooth zum funktionieren."
+            "value" : "dieses gerät unterstützt kein bluetooth. OpenChat benötigt bluetooth zum funktionieren."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "this device does not support bluetooth. meshcomm requires bluetooth to function."
+            "value" : "this device does not support bluetooth. OpenChat requires bluetooth to function."
           }
         },
         "es" : {
@@ -13183,145 +13183,145 @@
         "fil" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hindi sinusuportahan ng device na ito ang bluetooth. kailangan ito ng meshcomm para gumana."
+            "value" : "hindi sinusuportahan ng device na ito ang bluetooth. kailangan ito ng OpenChat para gumana."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "cet appareil ne prend pas en charge le bluetooth. meshcomm en a besoin pour fonctionner."
+            "value" : "cet appareil ne prend pas en charge le bluetooth. OpenChat en a besoin pour fonctionner."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "המכשיר הזה לא תומך ב-bluetooth. meshcomm זקוקה ל-bluetooth כדי לעבוד."
+            "value" : "המכשיר הזה לא תומך ב-bluetooth. OpenChat זקוקה ל-bluetooth כדי לעבוד."
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "यह डिवाइस ब्लूटूथ समर्थित नहीं है। meshcomm चलाने के लिए ब्लूटूथ जरूरी है।"
+            "value" : "यह डिवाइस ब्लूटूथ समर्थित नहीं है। OpenChat चलाने के लिए ब्लूटूथ जरूरी है।"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "perangkat ini tidak mendukung bluetooth. meshcomm memerlukan bluetooth untuk berjalan."
+            "value" : "perangkat ini tidak mendukung bluetooth. OpenChat memerlukan bluetooth untuk berjalan."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "questo dispositivo non supporta bluetooth. meshcomm richiede bluetooth per funzionare."
+            "value" : "questo dispositivo non supporta bluetooth. OpenChat richiede bluetooth per funzionare."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このデバイスはbluetoothをサポートしていません。meshcommにはbluetoothが必要です。"
+            "value" : "このデバイスはbluetoothをサポートしていません。OpenChatにはbluetoothが必要です。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "이 기기는 bluetooth를 지원하지 않습니다. meshcomm이 작동하려면 bluetooth가 필요합니다."
+            "value" : "이 기기는 bluetooth를 지원하지 않습니다. OpenChat이 작동하려면 bluetooth가 필요합니다."
           }
         },
         "ms" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Peranti ini tidak menyokong Bluetooth. meshcomm memerlukan Bluetooth untuk berfungsi."
+            "value" : "Peranti ini tidak menyokong Bluetooth. OpenChat memerlukan Bluetooth untuk berfungsi."
           }
         },
         "ne" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "यो उपकरणले bluetooth समर्थन गर्दैन। meshcomm चलाउन bluetooth चाहिन्छ।"
+            "value" : "यो उपकरणले bluetooth समर्थन गर्दैन। OpenChat चलाउन bluetooth चाहिन्छ।"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "dit apparaat ondersteunt geen bluetooth. meshcomm heeft bluetooth nodig om te werken."
+            "value" : "dit apparaat ondersteunt geen bluetooth. OpenChat heeft bluetooth nodig om te werken."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "to urządzenie nie obsługuje bluetooth. meshcomm wymaga bluetooth do działania."
+            "value" : "to urządzenie nie obsługuje bluetooth. OpenChat wymaga bluetooth do działania."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este dispositivo não suporta Bluetooth. O meshcomm precisa de Bluetooth para funcionar."
+            "value" : "Este dispositivo não suporta Bluetooth. O OpenChat precisa de Bluetooth para funcionar."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "este dispositivo não suporta bluetooth. meshcomm precisa de bluetooth para funcionar."
+            "value" : "este dispositivo não suporta bluetooth. OpenChat precisa de bluetooth para funcionar."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "это устройство не поддерживает bluetooth. meshcomm нужен bluetooth для работы."
+            "value" : "это устройство не поддерживает bluetooth. OpenChat нужен bluetooth для работы."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "denna enhet stöder inte bluetooth. meshcomm behöver bluetooth för att fungera."
+            "value" : "denna enhet stöder inte bluetooth. OpenChat behöver bluetooth för att fungera."
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "இந்த சாதனம் Bluetooth ஐ ஆதரிக்காது. meshcomm இயங்க Bluetooth தேவை."
+            "value" : "இந்த சாதனம் Bluetooth ஐ ஆதரிக்காது. OpenChat இயங்க Bluetooth தேவை."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "อุปกรณ์นี้ไม่รองรับ Bluetooth การใช้งาน meshcomm ต้องใช้ Bluetooth"
+            "value" : "อุปกรณ์นี้ไม่รองรับ Bluetooth การใช้งาน OpenChat ต้องใช้ Bluetooth"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "bu cihaz Bluetooth'u desteklemiyor. meshcomm'in çalışması için Bluetooth gerekli."
+            "value" : "bu cihaz Bluetooth'u desteklemiyor. OpenChat'in çalışması için Bluetooth gerekli."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "цей пристрій не підтримує bluetooth. meshcomm потрібен bluetooth для роботи."
+            "value" : "цей пристрій не підтримує bluetooth. OpenChat потрібен bluetooth для роботи."
           }
         },
         "ur" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "یہ ڈیوائس Bluetooth کو سپورٹ نہیں کرتی۔ meshcomm کو چلنے کیلئے Bluetooth چاہیے۔"
+            "value" : "یہ ڈیوائس Bluetooth کو سپورٹ نہیں کرتی۔ OpenChat کو چلنے کیلئے Bluetooth چاہیے۔"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "thiết bị này không hỗ trợ bluetooth. meshcomm cần bluetooth để hoạt động."
+            "value" : "thiết bị này không hỗ trợ bluetooth. OpenChat cần bluetooth để hoạt động."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此设备不支持 bluetooth。meshcomm 需要 bluetooth 才能运行。"
+            "value" : "此设备不支持 bluetooth。OpenChat 需要 bluetooth 才能运行。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此裝置不支持 bluetooth。meshcomm 需要 bluetooth 才能運行。"
+            "value" : "此裝置不支持 bluetooth。OpenChat 需要 bluetooth 才能運行。"
           }
         }
       }
@@ -31123,7 +31123,7 @@
         }
       }
     },
-    "meshcomm" : {
+    "OpenChat" : {
 
     },
     "nessun peer in raggio BLE" : {
