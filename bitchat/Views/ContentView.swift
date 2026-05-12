@@ -221,55 +221,8 @@ struct ContentView: View {
         .sheet(isPresented: $showRadarSheet) {
             RadarSheetView(viewModel: viewModel)
         }
-        .sheet(isPresented: $showChannelMore) {
-            ChannelMoreSheet(
-                topic: selectedTopic,
-                muted: $channelMuted,
-                memberCount: viewModel.allPeers.count,
-                onChannelInfo: {
-                    showChannelMore = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showAppInfo = true }
-                },
-                onMembers: {
-                    showChannelMore = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSidebar = true }
-                },
-                onShareLocation: {
-                    showChannelMore = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSOSConfirm = true }
-                },
-                onSearch: {
-                    showChannelMore = false
-                },
-                onLeave: {
-                    showChannelMore = false
-                    selectedTopic = "mesh"
-                }
-            )
-            .presentationDetents([.height(420)])
-            .presentationDragIndicator(.visible)
-        }
-        .overlay(alignment: .topLeading) {
-            if showSideDrawer {
-                SideDrawerView(
-                    isOpen: $showSideDrawer,
-                    selectedTopic: $selectedTopic,
-                    nickname: viewModel.nickname,
-                    nodeShortID: String(viewModel.meshService.myPeerID.prefix(4)),
-                    nodesActive: viewModel.allPeers.filter { $0.isConnected || $0.isReachable }.count,
-                    onOpenMap: {
-                        showSideDrawer = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSOSMapSheet = true }
-                    },
-                    onOpenSettings: {
-                        showSideDrawer = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSettings = true }
-                    }
-                )
-                .transition(.move(edge: .leading).combined(with: .opacity))
-                .zIndex(100)
-            }
-        }
+        .sheet(isPresented: $showChannelMore) { channelMoreSheet }
+        .overlay(alignment: .topLeading) { sideDrawerOverlay }
         .confirmationDialog(
             "Inviare SOS broadcast?",
             isPresented: $showSOSConfirm,
@@ -457,6 +410,69 @@ struct ContentView: View {
         .padding(.top, 6)
         .padding(.bottom, 10)
         .background(backgroundColor.opacity(0.95))
+    }
+
+    // MARK: - Side drawer & channel more (DESIGN.md §5, §9)
+
+    @ViewBuilder
+    private var channelMoreSheet: some View {
+        ChannelMoreSheet(
+            topic: selectedTopic,
+            muted: $channelMuted,
+            memberCount: viewModel.allPeers.count,
+            onChannelInfo: handleChannelInfo,
+            onMembers: handleChannelMembers,
+            onShareLocation: handleChannelShareLocation,
+            onSearch: handleChannelSearch,
+            onLeave: handleChannelLeave
+        )
+        .presentationDetents([.height(420)])
+        .presentationDragIndicator(.visible)
+    }
+
+    @ViewBuilder
+    private var sideDrawerOverlay: some View {
+        if showSideDrawer {
+            SideDrawerView(
+                isOpen: $showSideDrawer,
+                selectedTopic: $selectedTopic,
+                nickname: viewModel.nickname,
+                nodeShortID: String(viewModel.meshService.myPeerID.prefix(4)),
+                nodesActive: viewModel.allPeers.filter { $0.isConnected || $0.isReachable }.count,
+                onOpenMap: handleDrawerOpenMap,
+                onOpenSettings: handleDrawerOpenSettings
+            )
+            .transition(.move(edge: .leading).combined(with: .opacity))
+            .zIndex(100)
+        }
+    }
+
+    private func handleChannelInfo() {
+        showChannelMore = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showAppInfo = true }
+    }
+    private func handleChannelMembers() {
+        showChannelMore = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSidebar = true }
+    }
+    private func handleChannelShareLocation() {
+        showChannelMore = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSOSConfirm = true }
+    }
+    private func handleChannelSearch() {
+        showChannelMore = false
+    }
+    private func handleChannelLeave() {
+        showChannelMore = false
+        selectedTopic = "mesh"
+    }
+    private func handleDrawerOpenMap() {
+        showSideDrawer = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSOSMapSheet = true }
+    }
+    private func handleDrawerOpenSettings() {
+        showSideDrawer = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSettings = true }
     }
 
     // MARK: - Composer subviews (DESIGN.md §5, §13)
