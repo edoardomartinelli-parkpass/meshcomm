@@ -61,10 +61,11 @@ struct ContentView: View {
     @State private var showChannelMore = false
     @State private var showChannelManager = false
     @State private var channelMuted = false
-    @State private var selectedTopic: String = "mesh"
+    @State private var selectedTopic: String = "global"
     @State private var managedChannels: [ManagedChannel] = ManagedChannel.defaults
     @AppStorage("meshcomm.channels.v1") private var managedChannelsBlob: String = ""
     @AppStorage("meshcomm.sos.lastSeenID") private var lastSeenSOSID: String = ""
+    @AppStorage("meshcomm.themePreference") private var themePreference: String = "system"
     @StateObject private var composerSOSLocator = SOSLocationFetcher()
     @State private var selectedMessageSender: String?
     @State private var selectedMessageSenderID: PeerID?
@@ -233,7 +234,10 @@ struct ContentView: View {
                 selectedTopic: $selectedTopic
             )
         }
+        .overlay { sideDrawerScrim }
         .overlay(alignment: .topLeading) { sideDrawerOverlay }
+        .animation(.easeInOut(duration: 0.24), value: showSideDrawer)
+        .preferredColorScheme(themeColorScheme)
         .onAppear(perform: loadManagedChannels)
         .onChange(of: managedChannels) { _ in persistManagedChannels() }
         .confirmationDialog(
@@ -435,11 +439,10 @@ struct ContentView: View {
             memberCount: viewModel.allPeers.count,
             onChannelInfo: handleChannelInfo,
             onMembers: handleChannelMembers,
-            onShareLocation: handleChannelShareLocation,
             onSearch: handleChannelSearch,
             onLeave: handleChannelLeave
         )
-        .presentationDetents([.height(420)])
+        .presentationDetents([.height(360)])
         .presentationDragIndicator(.visible)
     }
 
@@ -453,11 +456,34 @@ struct ContentView: View {
                 nickname: viewModel.nickname,
                 nodeShortID: String(viewModel.meshService.myPeerID.id.prefix(4)),
                 nodesActive: viewModel.allPeers.filter { $0.isConnected || $0.isReachable }.count,
-                onOpenMap: handleDrawerOpenMap,
                 onOpenSettings: handleDrawerOpenSettings
             )
-            .transition(.move(edge: .leading).combined(with: .opacity))
+            .transition(.move(edge: .leading))
             .zIndex(100)
+        }
+    }
+
+    @ViewBuilder
+    private var sideDrawerScrim: some View {
+        if showSideDrawer {
+            Color.black.opacity(0.32)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.24)) {
+                        showSideDrawer = false
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(99)
+        }
+    }
+
+    private var themeColorScheme: ColorScheme? {
+        switch themePreference {
+        case "dark": return .dark
+        case "light": return .light
+        default: return nil
         }
     }
 
@@ -469,20 +495,12 @@ struct ContentView: View {
         showChannelMore = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSidebar = true }
     }
-    private func handleChannelShareLocation() {
-        showChannelMore = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSOSConfirm = true }
-    }
     private func handleChannelSearch() {
         showChannelMore = false
     }
     private func handleChannelLeave() {
         showChannelMore = false
         selectedTopic = "mesh"
-    }
-    private func handleDrawerOpenMap() {
-        showSideDrawer = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSOSMapSheet = true }
     }
     private func handleDrawerOpenSettings() {
         showSideDrawer = false
@@ -1815,134 +1833,21 @@ struct SettingsSheet: View {
     @Environment(\.dismiss) var dismiss
     @State private var draftNickname: String = ""
     @State private var savedToast: Bool = false
+    @AppStorage("meshcomm.themePreference") private var themePreference: String = "system"
 
     private let accent = Color(red: 0.851, green: 0.467, blue: 0.341)
 
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    HStack(spacing: 10) {
-                        Image(systemName: "person.crop.circle")
-                            .font(.system(size: 20, weight: .regular))
-                            .foregroundStyle(accent)
-                        TextField("callsign", text: $draftNickname)
-                            .font(.system(size: 16, design: .monospaced))
-                            .autocorrectionDisabled(true)
-                            #if os(iOS)
-                            .textInputAutocapitalization(.never)
-                            #endif
-                            .onSubmit { saveNickname() }
-                        Button("save") { saveNickname() }
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                            .foregroundStyle(canSave ? accent : .secondary)
-                            .disabled(!canSave)
-                    }
-                    if savedToast {
-                        Label("nickname salvato", systemImage: "checkmark.circle.fill")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(Color(red: 0.529, green: 0.682, blue: 0.420))
-                    }
-                } header: {
-                    Label("identity", systemImage: "person.text.rectangle")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                } footer: {
-                    Text("// callsign annunciato sui pacchetti HELLO. Visibile a tutti i peer.")
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.tertiary)
-                }
-
-                Section {
-                    NavigationLink {
-                        SOSMapView(pins: viewModel.sosPins)
-                    } label: {
-                        Label {
-                            HStack {
-                                Text("SOS map")
-                                    .font(.system(size: 14, design: .monospaced))
-                                Spacer()
-                                Text("\(viewModel.sosPins.count)")
-                                    .font(.system(size: 12, design: .monospaced))
-                                    .foregroundStyle(.secondary)
-                            }
-                        } icon: {
-                            Image(systemName: "map")
-                                .foregroundStyle(accent)
-                        }
-                    }
-                    NavigationLink {
-                        RadarSheetView(viewModel: viewModel)
-                    } label: {
-                        Label {
-                            Text("proximity radar")
-                                .font(.system(size: 14, design: .monospaced))
-                        } icon: {
-                            Image(systemName: "dot.radiowaves.left.and.right")
-                                .foregroundStyle(accent)
-                        }
-                    }
-                } header: {
-                    Label("tools", systemImage: "wrench.and.screwdriver")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                }
-
-                Section {
-                    Label {
-                        Text("meshcomm v1.0")
-                            .font(.system(size: 14, design: .monospaced))
-                    } icon: {
-                        Image(systemName: "antenna.radiowaves.left.and.right")
-                            .foregroundStyle(accent)
-                    }
-                    Label {
-                        Text("Fork of bitchat (Unlicense)")
-                            .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                    } icon: {
-                        Image(systemName: "arrow.triangle.branch")
-                            .foregroundStyle(.secondary)
-                    }
-                    Link(destination: URL(string: "https://github.com/edoardomartinelli-parkpass/meshcomm")!) {
-                        Label {
-                            Text("github / source")
-                                .font(.system(size: 13, design: .monospaced))
-                        } icon: {
-                            Image(systemName: "chevron.left.forwardslash.chevron.right")
-                                .foregroundStyle(accent)
-                        }
-                    }
-                } header: {
-                    Label("about", systemImage: "info.circle")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                }
-
-                Section {
-                    Button(role: .destructive) {
-                        viewModel.panicClearAllData()
-                        dismiss()
-                    } label: {
-                        Label {
-                            Text("emergency wipe")
-                                .font(.system(size: 14, weight: .bold, design: .monospaced))
-                        } icon: {
-                            Image(systemName: "trash")
-                        }
-                    }
-                } header: {
-                    Label("danger zone", systemImage: "exclamationmark.triangle")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundStyle(Color(red: 0.760, green: 0.330, blue: 0.314))
-                } footer: {
-                    Text("// cancella keypair, cronologia chat e pin SOS. Irreversibile.")
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.tertiary)
-                }
+                identitySection
+                appearanceSection
+                toolsSection
+                aboutSection
+                dangerSection
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("settings")
+            .navigationTitle("impostazioni")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -1950,13 +1855,165 @@ struct SettingsSheet: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                            .font(.system(size: 13, weight: .semibold))
                     }
                 }
             }
-            .onAppear {
-                draftNickname = viewModel.nickname
+            .onAppear { draftNickname = viewModel.nickname }
+        }
+    }
+
+    private var identitySection: some View {
+        Section {
+            HStack(spacing: 12) {
+                Image(systemName: "person.crop.circle")
+                    .font(.system(size: 20, weight: .regular))
+                    .foregroundStyle(accent)
+                TextField("callsign", text: $draftNickname)
+                    .font(.system(size: 16))
+                    .autocorrectionDisabled(true)
+                    #if os(iOS)
+                    .textInputAutocapitalization(.never)
+                    #endif
+                    .onSubmit { saveNickname() }
+                if canSave {
+                    Button("salva", action: saveNickname)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(accent)
+                }
             }
+            if savedToast {
+                Label("nickname salvato", systemImage: "checkmark.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color(red: 0.122, green: 0.541, blue: 0.357))
+            }
+        } header: {
+            Text("identita'")
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(0.8)
+                .foregroundStyle(.secondary)
+        } footer: {
+            Text("Callsign annunciato sui pacchetti HELLO. Visibile a tutti i peer.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var appearanceSection: some View {
+        Section {
+            Picker(selection: $themePreference) {
+                Text("sistema").tag("system")
+                Text("chiaro").tag("light")
+                Text("scuro").tag("dark")
+            } label: {
+                Label {
+                    Text("tema")
+                        .font(.system(size: 15))
+                } icon: {
+                    Image(systemName: "circle.lefthalf.filled")
+                        .foregroundStyle(accent)
+                }
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text("aspetto")
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(0.8)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var toolsSection: some View {
+        Section {
+            NavigationLink {
+                SOSMapView(pins: viewModel.sosPins)
+            } label: {
+                Label {
+                    HStack {
+                        Text("mappa SOS").font(.system(size: 15))
+                        Spacer()
+                        Text("\(viewModel.sosPins.count)")
+                            .font(.system(size: 13))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: "map").foregroundStyle(accent)
+                }
+            }
+            NavigationLink {
+                RadarSheetView(viewModel: viewModel)
+            } label: {
+                Label {
+                    Text("radar di prossimita'").font(.system(size: 15))
+                } icon: {
+                    Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(accent)
+                }
+            }
+        } header: {
+            Text("strumenti")
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(0.8)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var aboutSection: some View {
+        Section {
+            HStack {
+                Label {
+                    Text("meshcomm").font(.system(size: 15))
+                } icon: {
+                    Image(systemName: "antenna.radiowaves.left.and.right").foregroundStyle(accent)
+                }
+                Spacer()
+                Text("v1.0").font(.system(size: 13)).foregroundStyle(.secondary)
+            }
+            HStack {
+                Label {
+                    Text("fork di bitchat").font(.system(size: 13)).foregroundStyle(.secondary)
+                } icon: {
+                    Image(systemName: "arrow.triangle.branch").foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text("Unlicense").font(.system(size: 12)).foregroundStyle(.secondary)
+            }
+            Link(destination: URL(string: "https://github.com/edoardomartinelli-parkpass/meshcomm")!) {
+                Label {
+                    Text("github / source").font(.system(size: 14))
+                } icon: {
+                    Image(systemName: "chevron.left.forwardslash.chevron.right").foregroundStyle(accent)
+                }
+            }
+        } header: {
+            Text("info")
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(0.8)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var dangerSection: some View {
+        Section {
+            Button(role: .destructive) {
+                viewModel.panicClearAllData()
+                dismiss()
+            } label: {
+                Label {
+                    Text("emergency wipe").font(.system(size: 15, weight: .semibold))
+                } icon: {
+                    Image(systemName: "trash")
+                }
+            }
+        } header: {
+            Text("danger zone")
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(0.8)
+                .foregroundStyle(Color(red: 0.753, green: 0.212, blue: 0.173))
+        } footer: {
+            Text("Cancella keypair, cronologia chat e pin SOS. Irreversibile.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -1989,7 +2046,6 @@ struct SideDrawerView: View {
     let nickname: String
     let nodeShortID: String
     let nodesActive: Int
-    let onOpenMap: () -> Void
     let onOpenSettings: () -> Void
     @Environment(\.colorScheme) private var colorScheme
     @State private var batteryLevel: Float = -1
@@ -2017,18 +2073,11 @@ struct SideDrawerView: View {
 
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .topLeading) {
-                Color.black.opacity(0.32)
-                    .ignoresSafeArea()
-                    .contentShape(Rectangle())
-                    .onTapGesture { close() }
-
-                drawerContent
-                    .frame(width: min(geo.size.width * 0.82, 320))
-                    .frame(maxHeight: .infinity)
-                    .background(bg)
-                    .shadow(color: .black.opacity(0.18), radius: 30, x: 4, y: 0)
-            }
+            drawerContent
+                .frame(width: min(geo.size.width * 0.82, 320))
+                .frame(maxHeight: .infinity, alignment: .topLeading)
+                .background(bg)
+                .shadow(color: .black.opacity(0.18), radius: 30, x: 4, y: 0)
         }
         .ignoresSafeArea()
         .onAppear {
@@ -2176,7 +2225,6 @@ struct SideDrawerView: View {
         VStack(spacing: 2) {
             Rectangle().fill(faint).frame(height: 0.5)
                 .padding(.bottom, 4)
-            footerItem(icon: "map", label: "mappa nodi", action: onOpenMap)
             footerItem(icon: "ellipsis", label: "impostazioni", action: onOpenSettings)
         }
         .padding(.horizontal, 12)
@@ -2217,7 +2265,6 @@ struct ChannelMoreSheet: View {
     let memberCount: Int
     let onChannelInfo: () -> Void
     let onMembers: () -> Void
-    let onShareLocation: () -> Void
     let onSearch: () -> Void
     let onLeave: () -> Void
     @Environment(\.dismiss) private var dismiss
@@ -2236,21 +2283,17 @@ struct ChannelMoreSheet: View {
     }
 
     private var header: some View {
-        VStack(spacing: 2) {
-            Text("canale")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-            HStack(spacing: 0) {
-                Text("#")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(Self.accent)
-                Text(topic)
-                    .font(.system(size: 20, weight: .semibold))
-                    .tracking(-0.2)
-            }
+        HStack(spacing: 0) {
+            Text("#")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(Self.accent)
+            Text(topic)
+                .font(.system(size: 22, weight: .semibold))
+                .tracking(-0.2)
         }
         .frame(maxWidth: .infinity)
-        .padding(.bottom, 8)
+        .padding(.top, 6)
+        .padding(.bottom, 14)
     }
 
     private var actions: some View {
@@ -2261,7 +2304,6 @@ struct ChannelMoreSheet: View {
             }
             row(icon: "ellipsis", label: "info canale", action: onChannelInfo)
             row(icon: "line.3.horizontal", label: "membri (\(memberCount))", action: onMembers)
-            row(icon: "mappin.and.ellipse", label: "condividi posizione live", action: onShareLocation)
             row(icon: "map", label: "cerca nei messaggi", action: onSearch)
             row(icon: "exclamationmark.octagon", label: "esci dal canale", danger: true, action: onLeave)
         }
@@ -2299,11 +2341,7 @@ struct ManagedChannel: Identifiable, Hashable, Codable {
     var isDanger: Bool
 
     static let defaults: [ManagedChannel] = [
-        ManagedChannel(name: "mesh", hint: "canale principale", unread: 0, isDanger: false),
-        ManagedChannel(name: "rifugio", hint: "sofia, marco", unread: 2, isDanger: false),
-        ManagedChannel(name: "soccorso", hint: "solo SOS", unread: 0, isDanger: true),
-        ManagedChannel(name: "meteo", hint: "bot · ogni 30 min", unread: 4, isDanger: false),
-        ManagedChannel(name: "logs", hint: "sistema", unread: 0, isDanger: false)
+        ManagedChannel(name: "global", hint: "canale principale", unread: 0, isDanger: false)
     ]
 }
 
