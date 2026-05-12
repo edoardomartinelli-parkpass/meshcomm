@@ -1044,15 +1044,15 @@ struct ContentView: View {
     @ViewBuilder
     private var legacyHeaderTrailing: some View {
         let cc = channelPeopleCountAndColor()
-            let headerCountColor: Color = cc.1
-            let headerOtherPeersCount: Int = {
-                if case .location = locationManager.selectedChannel {
-                    return viewModel.visibleGeohashPeople().count
-                }
-                return cc.0
-            }()
+        let headerCountColor: Color = cc.1
+        let headerOtherPeersCount: Int = {
+            if case .location = locationManager.selectedChannel {
+                return viewModel.visibleGeohashPeople().count
+            }
+            return cc.0
+        }()
 
-            HStack(spacing: 10) {
+        HStack(spacing: 10) {
                 // Unread icon immediately to the left of the channel badge (independent from channel button)
                 
                 // Unread indicator (now shown on iOS and macOS)
@@ -1170,6 +1170,14 @@ struct ContentView: View {
                     .environmentObject(viewModel)
             }
         }
+    }
+
+    // MARK: - Sheets & lifecycle modifiers extracted from the old header
+
+    /// Modifiers previously chained on the verbose `mainHeaderView` body.
+    /// Applied to the root `VStack` so the new minimal header stays clean.
+    func attachLegacyHeaderModifiers<V: View>(_ view: V) -> some View {
+        view
         .frame(height: headerHeight)
         .padding(.horizontal, 12)
         .sheet(isPresented: $showLocationChannelsSheet) {
