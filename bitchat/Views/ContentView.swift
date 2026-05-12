@@ -63,7 +63,7 @@ struct ContentView: View {
     @State private var channelMuted = false
     @State private var selectedTopic: String = "global"
     @State private var managedChannels: [ManagedChannel] = ManagedChannel.defaults
-    @AppStorage("meshcomm.channels.v1") private var managedChannelsBlob: String = ""
+    @AppStorage("meshcomm.channels.v2") private var managedChannelsBlob: String = ""
     @AppStorage("meshcomm.sos.lastSeenID") private var lastSeenSOSID: String = ""
     @AppStorage("meshcomm.themePreference") private var themePreference: String = "system"
     @StateObject private var composerSOSLocator = SOSLocationFetcher()
