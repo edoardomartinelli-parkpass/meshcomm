@@ -10,12 +10,6 @@
     "// avvicinati a un altro device meshcomm e attendi qualche secondo" : {
 
     },
-    "// callsign annunciato sui pacchetti HELLO. Visibile a tutti i peer." : {
-
-    },
-    "// cancella keypair, cronologia chat e pin SOS. Irreversibile." : {
-
-    },
     "// pin appariranno qui quando ricevi un broadcast [SOS] con coordinate" : {
 
     },
@@ -6127,13 +6121,22 @@
         }
       }
     },
-    "canale" : {
+    "aspetto" : {
+
+    },
+    "Callsign annunciato sui pacchetti HELLO. Visibile a tutti i peer." : {
 
     },
     "canali" : {
 
     },
     "CANALI" : {
+
+    },
+    "Cancella keypair, cronologia chat e pin SOS. Irreversibile." : {
+
+    },
+    "chiaro" : {
 
     },
     "Choose an image" : {
@@ -19051,6 +19054,9 @@
         }
       }
     },
+    "danger zone" : {
+
+    },
     "emergency wipe" : {
 
     },
@@ -22634,7 +22640,7 @@
         }
       }
     },
-    "Fork of bitchat (Unlicense)" : {
+    "fork di bitchat" : {
 
     },
     "geohash_people.action.block" : {
@@ -23535,6 +23541,9 @@
     "github / source" : {
 
     },
+    "identita'" : {
+
+    },
     "Images are only available in mesh chats." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23713,6 +23722,9 @@
           }
         }
       }
+    },
+    "info" : {
+
     },
     "location_channels.action.open_settings" : {
       "extractionState" : "manual",
@@ -30926,6 +30938,9 @@
         }
       }
     },
+    "mappa SOS" : {
+
+    },
     "mesh attiva" : {
 
     },
@@ -31108,7 +31123,7 @@
         }
       }
     },
-    "meshcomm v1.0" : {
+    "meshcomm" : {
 
     },
     "nessun peer in raggio BLE" : {
@@ -31121,6 +31136,9 @@
 
     },
     "proximity radar" : {
+
+    },
+    "radar di prossimita'" : {
 
     },
     "recording %@" : {
@@ -31481,6 +31499,12 @@
         }
       }
     },
+    "scuro" : {
+
+    },
+    "sistema" : {
+
+    },
     "solo lettere, numeri e trattini. swipe per eliminare un canale (#mesh non puo' essere rimosso)." : {
 
     },
@@ -31488,6 +31512,9 @@
 
     },
     "SOS map" : {
+
+    },
+    "strumenti" : {
 
     },
     "system.chat.blocked" : {
@@ -34174,6 +34201,15 @@
           }
         }
       }
+    },
+    "tema" : {
+
+    },
+    "Unlicense" : {
+
+    },
+    "v1.0" : {
+
     },
     "verification.my_qr.accessibility_label" : {
       "extractionState" : "manual",

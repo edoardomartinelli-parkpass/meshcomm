@@ -1861,6 +1861,15 @@ struct SettingsSheet: View {
             }
             .onAppear { draftNickname = viewModel.nickname }
         }
+        .preferredColorScheme(localColorScheme)
+    }
+
+    private var localColorScheme: ColorScheme? {
+        switch themePreference {
+        case "dark": return .dark
+        case "light": return .light
+        default: return nil
+        }
     }
 
     private var identitySection: some View {
