@@ -217,6 +217,9 @@
     "%@ dBm" : {
 
     },
+    "aggiungi" : {
+
+    },
     "app_info.app_name" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6127,7 +6130,7 @@
     "canale" : {
 
     },
-    "CANALE" : {
+    "canali" : {
 
     },
     "CANALI" : {
@@ -31477,6 +31480,9 @@
           }
         }
       }
+    },
+    "solo lettere, numeri e trattini. swipe per eliminare un canale (#mesh non puo' essere rimosso)." : {
+
     },
     "SOS" : {
 

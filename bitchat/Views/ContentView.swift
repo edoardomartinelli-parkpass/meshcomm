@@ -64,6 +64,7 @@ struct ContentView: View {
     @State private var selectedTopic: String = "mesh"
     @State private var managedChannels: [ManagedChannel] = ManagedChannel.defaults
     @AppStorage("meshcomm.channels.v1") private var managedChannelsBlob: String = ""
+    @AppStorage("meshcomm.sos.lastSeenID") private var lastSeenSOSID: String = ""
     @StateObject private var composerSOSLocator = SOSLocationFetcher()
     @State private var selectedMessageSender: String?
     @State private var selectedMessageSenderID: PeerID?
@@ -218,8 +219,9 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsSheet(viewModel: viewModel)
         }
-        .sheet(isPresented: $showSOSMapSheet) {
+        .sheet(isPresented: $showSOSMapSheet, onDismiss: markIncomingSOSAsSeen) {
             SOSMapView(pins: viewModel.sosPins)
+                .onAppear { markIncomingSOSAsSeen() }
         }
         .sheet(isPresented: $showRadarSheet) {
             RadarSheetView(viewModel: viewModel)
@@ -522,15 +524,41 @@ struct ContentView: View {
                 showComposerActions.toggle()
             }
         } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 22, weight: .regular))
-                .foregroundColor(textColor)
-                .rotationEffect(.degrees(showComposerActions ? 45 : 0))
-                .frame(width: 38, height: 38)
-                .background(Circle().fill(meshSurface2))
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .regular))
+                    .foregroundColor(textColor)
+                    .rotationEffect(.degrees(showComposerActions ? 45 : 0))
+                    .frame(width: 38, height: 38)
+                    .background(Circle().fill(meshSurface2))
+
+                if hasUnreadIncomingSOS && !showComposerActions {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 10, height: 10)
+                        .overlay(Circle().stroke(backgroundColor, lineWidth: 1.5))
+                        .offset(x: 2, y: -2)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Show actions")
+    }
+
+    /// Most recent received SOS pin (from someone else) that the user has
+    /// not yet acknowledged by opening the SOS map.
+    private var hasUnreadIncomingSOS: Bool {
+        guard let lastIncoming = viewModel.sosPins.last(where: { !$0.isOwn }) else {
+            return false
+        }
+        return lastIncoming.id != lastSeenSOSID
+    }
+
+    private func markIncomingSOSAsSeen() {
+        if let lastIncoming = viewModel.sosPins.last(where: { !$0.isOwn }) {
+            lastSeenSOSID = lastIncoming.id
+        }
     }
 
     private var composerTextFieldPill: some View {
@@ -602,7 +630,11 @@ struct ContentView: View {
                 ) {
                     closeActionsAnd { showSOSConfirm = true }
                 }
-                ComposerActionTile(icon: "map", label: "mappa") {
+                ComposerActionTile(
+                    icon: "map",
+                    label: "mappa",
+                    showBadge: hasUnreadIncomingSOS
+                ) {
                     closeActionsAnd { showSOSMapSheet = true }
                 }
                 ComposerActionTile(icon: "dot.radiowaves.left.and.right", label: "radar") {
@@ -2449,25 +2481,36 @@ struct ComposerActionTile: View {
     let icon: String
     let label: String
     var danger: Bool = false
+    var showBadge: Bool = false
     let action: () -> Void
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 22, weight: .regular))
-                Text(label)
-                    .font(.system(size: 10.5, weight: .medium))
+            ZStack(alignment: .topTrailing) {
+                VStack(spacing: 6) {
+                    Image(systemName: icon)
+                        .font(.system(size: 22, weight: .regular))
+                    Text(label)
+                        .font(.system(size: 10.5, weight: .medium))
+                }
+                .foregroundColor(foreground)
+                .frame(minWidth: 60)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(background)
+                )
+
+                if showBadge {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 9, height: 9)
+                        .overlay(Circle().stroke(background, lineWidth: 1.5))
+                        .offset(x: 4, y: -4)
+                }
             }
-            .foregroundColor(foreground)
-            .frame(minWidth: 60)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(background)
-            )
         }
         .buttonStyle(.plain)
     }
