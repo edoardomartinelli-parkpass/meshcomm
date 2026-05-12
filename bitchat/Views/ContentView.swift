@@ -437,7 +437,7 @@ struct ContentView: View {
                 isOpen: $showSideDrawer,
                 selectedTopic: $selectedTopic,
                 nickname: viewModel.nickname,
-                nodeShortID: String(viewModel.meshService.myPeerID.prefix(4)),
+                nodeShortID: String(viewModel.meshService.myPeerID.id.prefix(4)),
                 nodesActive: viewModel.allPeers.filter { $0.isConnected || $0.isReachable }.count,
                 onOpenMap: handleDrawerOpenMap,
                 onOpenSettings: handleDrawerOpenSettings
