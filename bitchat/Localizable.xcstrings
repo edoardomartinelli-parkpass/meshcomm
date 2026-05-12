@@ -7,7 +7,7 @@
     "@%@" : {
 
     },
-    "// avvicinati a un altro device OpenChat e attendi qualche secondo" : {
+    "// avvicinati a un altro device meshcomm e attendi qualche secondo" : {
 
     },
     "// pin appariranno qui quando ricevi un broadcast [SOS] con coordinate" : {
@@ -31123,9 +31123,6 @@
         }
       }
     },
-    "OpenChat" : {
-
-    },
     "nessun peer in raggio BLE" : {
 
     },
@@ -31133,6 +31130,9 @@
 
     },
     "node · %@ · online" : {
+
+    },
+    "OpenChat" : {
 
     },
     "proximity radar" : {

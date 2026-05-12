@@ -1111,6 +1111,8 @@ struct ContentView: View {
     private var mainHeaderView: some View {
         HStack(alignment: .center, spacing: 10) {
             Button {
+                isTextFieldFocused = false
+                isNicknameFieldFocused = false
                 withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
                     showSideDrawer = true
                 }
