@@ -306,6 +306,38 @@ struct ContentView: View {
         } message: {
             Text(viewModel.bluetoothAlertMessage)
         }
+        .sheet(isPresented: $showLocationChannelsSheet) {
+            LocationChannelsSheet(isPresented: $showLocationChannelsSheet)
+                .environmentObject(viewModel)
+                .onAppear { viewModel.isLocationChannelsSheetPresented = true }
+                .onDisappear { viewModel.isLocationChannelsSheetPresented = false }
+        }
+        .alert("content.alert.screenshot.title", isPresented: $viewModel.showScreenshotPrivacyWarning) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text("content.alert.screenshot.message")
+        }
+        .onAppear {
+            if case .mesh = locationManager.selectedChannel,
+               locationManager.permissionState == .authorized,
+               LocationChannelManager.shared.availableChannels.isEmpty {
+                LocationChannelManager.shared.refreshChannels()
+            }
+        }
+        .onChange(of: locationManager.selectedChannel) { _ in
+            if case .mesh = locationManager.selectedChannel,
+               locationManager.permissionState == .authorized,
+               LocationChannelManager.shared.availableChannels.isEmpty {
+                LocationChannelManager.shared.refreshChannels()
+            }
+        }
+        .onChange(of: locationManager.permissionState) { _ in
+            if case .mesh = locationManager.selectedChannel,
+               locationManager.permissionState == .authorized,
+               LocationChannelManager.shared.availableChannels.isEmpty {
+                LocationChannelManager.shared.refreshChannels()
+            }
+        }
         .onDisappear {
             autocompleteDebounceTimer?.invalidate()
         }
@@ -1039,242 +1071,6 @@ struct ContentView: View {
         .padding(.bottom, 10)
     }
 
-    // Legacy header trailing column kept for code paths that still reference
-    // the channel-aware counter. Not rendered in the new header layout.
-    @ViewBuilder
-    private var legacyHeaderTrailing: some View {
-        let cc = channelPeopleCountAndColor()
-        let headerCountColor: Color = cc.1
-        let headerOtherPeersCount: Int = {
-            if case .location = locationManager.selectedChannel {
-                return viewModel.visibleGeohashPeople().count
-            }
-            return cc.0
-        }()
-
-        HStack(spacing: 10) {
-                // Unread icon immediately to the left of the channel badge (independent from channel button)
-                
-                // Unread indicator (now shown on iOS and macOS)
-                if viewModel.hasAnyUnreadMessages {
-                    Button(action: { viewModel.openMostRelevantPrivateChat() }) {
-                        Image(systemName: "envelope.fill")
-                            .font(.bitchatSystem(size: 12))
-                            .foregroundColor(Color.orange)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(
-                        String(localized: "content.accessibility.open_unread_private_chat", comment: "Accessibility label for the unread private chat button")
-                    )
-                }
-                // Notes icon (mesh only and when location is authorized), to the left of #mesh
-                if case .mesh = locationManager.selectedChannel, locationManager.permissionState == .authorized {
-                    Button(action: {
-                        // Kick a one-shot refresh and show the sheet immediately.
-                        LocationChannelManager.shared.enableLocationChannels()
-                        LocationChannelManager.shared.refreshChannels()
-                        // If we already have a block geohash, pass it; otherwise wait in the sheet.
-                        notesGeohash = LocationChannelManager.shared.availableChannels.first(where: { $0.level == .building })?.geohash
-                        showLocationNotes = true
-                    }) {
-                        HStack(alignment: .center, spacing: 4) {
-                            Image(systemName: "note.text")
-                                .font(.bitchatSystem(size: 12))
-                                .foregroundColor(Color.orange.opacity(0.8))
-                                .padding(.top, 1)
-                        }
-                        .fixedSize(horizontal: true, vertical: false)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(
-                        String(localized: "content.accessibility.location_notes", comment: "Accessibility label for location notes button")
-                    )
-                }
-
-                // Bookmark toggle (geochats): to the left of #geohash
-                if case .location(let ch) = locationManager.selectedChannel {
-                    Button(action: { bookmarks.toggle(ch.geohash) }) {
-                        Image(systemName: bookmarks.isBookmarked(ch.geohash) ? "bookmark.fill" : "bookmark")
-                            .font(.bitchatSystem(size: 12))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(
-                        String(
-                            format: String(localized: "content.accessibility.toggle_bookmark", comment: "Accessibility label for toggling a geohash bookmark"),
-                            locale: .current,
-                            ch.geohash
-                        )
-                    )
-                }
-
-                // Location channels button '#'
-                Button(action: { showLocationChannelsSheet = true }) {
-                    let badgeText: String = {
-                        switch locationManager.selectedChannel {
-                        case .mesh: return "#mesh"
-                        case .location(let ch): return "#\(ch.geohash)"
-                        }
-                    }()
-                    let badgeColor: Color = {
-                        switch locationManager.selectedChannel {
-                        case .mesh:
-                            return Color(hue: 0.60, saturation: 0.85, brightness: 0.82)
-                        case .location:
-                            return (colorScheme == .dark) ? Color(red: 0.851, green: 0.467, blue: 0.341) : Color(red: 0.722, green: 0.351, blue: 0.231)
-                        }
-                    }()
-                    Text(badgeText)
-                        .font(.bitchatSystem(size: 14, design: .monospaced))
-                        .foregroundColor(badgeColor)
-                        .lineLimit(headerLineLimit)
-                        .fixedSize(horizontal: true, vertical: false)
-                        .layoutPriority(2)
-                        .accessibilityLabel(
-                            String(localized: "content.accessibility.location_channels", comment: "Accessibility label for the location channels button")
-                        )
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 4)
-                .padding(.trailing, 2)
-
-                HStack(spacing: 4) {
-                    // People icon with count
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: headerPeerIconSize, weight: .regular))
-                        .accessibilityLabel(
-                            String(
-                                format: String(localized: "content.accessibility.people_count", comment: "Accessibility label announcing number of people in header"),
-                                locale: .current,
-                                headerOtherPeersCount
-                            )
-                        )
-                    Text("\(headerOtherPeersCount)")
-                        .font(.system(size: headerPeerCountFontSize, weight: .regular, design: .monospaced))
-                        .accessibilityHidden(true)
-                }
-                .foregroundColor(headerCountColor)
-                .padding(.leading, 2)
-                .lineLimit(headerLineLimit)
-                .fixedSize(horizontal: true, vertical: false)
-
-                // QR moved to the PEOPLE header in the sidebar when on mesh channel
-            }
-            .layoutPriority(3)
-            .onTapGesture {
-                withAnimation(.easeInOut(duration: TransportConfig.uiAnimationMediumSeconds)) {
-                    showSidebar.toggle()
-                }
-            }
-            .sheet(isPresented: $showVerifySheet) {
-                VerificationSheetView(isPresented: $showVerifySheet)
-                    .environmentObject(viewModel)
-            }
-        }
-    }
-
-    // MARK: - Sheets & lifecycle modifiers extracted from the old header
-
-    /// Modifiers previously chained on the verbose `mainHeaderView` body.
-    /// Applied to the root `VStack` so the new minimal header stays clean.
-    func attachLegacyHeaderModifiers<V: View>(_ view: V) -> some View {
-        view
-        .frame(height: headerHeight)
-        .padding(.horizontal, 12)
-        .sheet(isPresented: $showLocationChannelsSheet) {
-            LocationChannelsSheet(isPresented: $showLocationChannelsSheet)
-                .environmentObject(viewModel)
-                .onAppear { viewModel.isLocationChannelsSheetPresented = true }
-                .onDisappear { viewModel.isLocationChannelsSheetPresented = false }
-        }
-        .sheet(isPresented: $showLocationNotes, onDismiss: {
-            notesGeohash = nil
-        }) {
-            Group {
-                if let gh = notesGeohash ?? LocationChannelManager.shared.availableChannels.first(where: { $0.level == .building })?.geohash {
-                    LocationNotesView(geohash: gh)
-                        .environmentObject(viewModel)
-                } else {
-                    VStack(spacing: 12) {
-                        HStack {
-                            Text("content.notes.title")
-                                .font(.bitchatSystem(size: 16, weight: .bold, design: .monospaced))
-                            Spacer()
-                            Button(action: { showLocationNotes = false }) {
-                                Image(systemName: "xmark")
-                                    .font(.bitchatSystem(size: 13, weight: .semibold, design: .monospaced))
-                                    .foregroundColor(textColor)
-                                    .frame(width: 32, height: 32)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(String(localized: "common.close", comment: "Accessibility label for close buttons"))
-                        }
-                        .frame(height: headerHeight)
-                        .padding(.horizontal, 12)
-                        .background(backgroundColor.opacity(0.95))
-                        Text("content.notes.location_unavailable")
-                            .font(.bitchatSystem(size: 14, design: .monospaced))
-                            .foregroundColor(secondaryTextColor)
-                        Button("content.location.enable") {
-                            LocationChannelManager.shared.enableLocationChannels()
-                            LocationChannelManager.shared.refreshChannels()
-                        }
-                        .buttonStyle(.bordered)
-                        Spacer()
-                    }
-                    .background(backgroundColor)
-                    .foregroundColor(textColor)
-                    // per-sheet global onChange added below
-                }
-            }
-            .onAppear {
-                // Ensure we are authorized and start live location updates (distance-filtered)
-                LocationChannelManager.shared.enableLocationChannels()
-                LocationChannelManager.shared.beginLiveRefresh()
-            }
-            .onDisappear {
-                LocationChannelManager.shared.endLiveRefresh()
-            }
-            .onChange(of: locationManager.availableChannels) { channels in
-                if let current = channels.first(where: { $0.level == .building })?.geohash,
-                    notesGeohash != current {
-                    notesGeohash = current
-                    #if os(iOS)
-                    // Light taptic when geohash changes while the sheet is open
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.prepare()
-                    generator.impactOccurred()
-                    #endif
-                }
-            }
-        }
-        .onAppear {
-            if case .mesh = locationManager.selectedChannel,
-               locationManager.permissionState == .authorized,
-               LocationChannelManager.shared.availableChannels.isEmpty {
-                LocationChannelManager.shared.refreshChannels()
-            }
-        }
-        .onChange(of: locationManager.selectedChannel) { _ in
-            if case .mesh = locationManager.selectedChannel,
-               locationManager.permissionState == .authorized,
-               LocationChannelManager.shared.availableChannels.isEmpty {
-                LocationChannelManager.shared.refreshChannels()
-            }
-        }
-        .onChange(of: locationManager.permissionState) { _ in
-            if case .mesh = locationManager.selectedChannel,
-               locationManager.permissionState == .authorized,
-               LocationChannelManager.shared.availableChannels.isEmpty {
-                LocationChannelManager.shared.refreshChannels()
-            }
-        }
-        .alert("content.alert.screenshot.title", isPresented: $viewModel.showScreenshotPrivacyWarning) {
-            Button("common.ok", role: .cancel) {}
-        } message: {
-            Text("content.alert.screenshot.message")
-        }
-        .background(backgroundColor.opacity(0.95))
-    }
 }
 
 // MARK: - Helper Views
