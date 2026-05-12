@@ -4,6 +4,9 @@
     "·" : {
 
     },
+    "@%@" : {
+
+    },
     "// avvicinati a un altro device meshcomm e attendi qualche secondo" : {
 
     },
@@ -6121,7 +6124,13 @@
         }
       }
     },
+    "canale" : {
+
+    },
     "CANALE" : {
+
+    },
+    "CANALI" : {
 
     },
     "Choose an image" : {
@@ -31103,6 +31112,9 @@
 
     },
     "nessun SOS sulla mappa" : {
+
+    },
+    "node · %@ · online" : {
 
     },
     "proximity radar" : {

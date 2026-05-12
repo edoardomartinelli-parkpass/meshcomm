@@ -1935,6 +1935,8 @@ struct SideDrawerView: View {
     let onOpenMap: () -> Void
     let onOpenSettings: () -> Void
     @Environment(\.colorScheme) private var colorScheme
+    @State private var batteryLevel: Float = -1
+    @State private var batteryTimer: Timer?
 
     private static let accent = Color(red: 0.851, green: 0.467, blue: 0.341)
     private static let danger = Color(red: 0.753, green: 0.212, blue: 0.173)
@@ -1987,6 +1989,24 @@ struct SideDrawerView: View {
             }
         }
         .ignoresSafeArea()
+        .onAppear {
+            #if os(iOS)
+            UIDevice.current.isBatteryMonitoringEnabled = true
+            batteryLevel = UIDevice.current.batteryLevel
+            batteryTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
+                batteryLevel = UIDevice.current.batteryLevel
+            }
+            #endif
+        }
+        .onDisappear {
+            batteryTimer?.invalidate()
+            batteryTimer = nil
+        }
+    }
+
+    private var batteryDisplay: String {
+        if batteryLevel < 0 { return "—" }
+        return "\(Int((batteryLevel * 100).rounded()))%"
     }
 
     private var drawerContent: some View {
@@ -2026,13 +2046,14 @@ struct SideDrawerView: View {
     }
 
     private var statsRow: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .center, spacing: 0) {
             statCell(value: "\(nodesActive)", label: "nodi attivi")
-            Rectangle().fill(faint).frame(width: 0.5)
+            Rectangle().fill(faint).frame(width: 0.5, height: 28)
             statCell(value: "3", label: "hop max")
-            Rectangle().fill(faint).frame(width: 0.5)
-            statCell(value: "87%", label: "batteria")
+            Rectangle().fill(faint).frame(width: 0.5, height: 28)
+            statCell(value: batteryDisplay, label: "batteria")
         }
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(surface2, in: RoundedRectangle(cornerRadius: 12))
@@ -2049,6 +2070,7 @@ struct SideDrawerView: View {
                 .font(.system(size: 11.5))
                 .foregroundStyle(muted)
         }
+        .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 8)
     }
