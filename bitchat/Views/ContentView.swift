@@ -150,7 +150,7 @@ struct ContentView: View {
                     viewModel.currentColorScheme = newValue
                 }
 
-            Divider()
+            statusStripView
 
             GeometryReader { geometry in
                 VStack(spacing: 0) {
@@ -927,63 +927,123 @@ struct ContentView: View {
 
     
     private var mainHeaderView: some View {
-        HStack(spacing: 6) {
+        HStack(alignment: .center, spacing: 10) {
             Button {
                 showSettings = true
             } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 18, weight: .regular))
                     .foregroundColor(textColor)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 36, height: 36)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Settings menu")
 
-            Text(verbatim: "meshcomm/")
-                .font(.bitchatSystem(size: 18, weight: .medium, design: .monospaced))
-                .foregroundColor(textColor)
-                .onTapGesture(count: 3) {
-                    // PANIC: Triple-tap to clear all data
-                    viewModel.panicClearAllData()
-                }
-                .onTapGesture(count: 1) {
-                    // Single tap for app info
-                    showAppInfo = true
-                }
-            
-            HStack(spacing: 0) {
-                Text(verbatim: "@")
-                    .font(.bitchatSystem(size: 14, design: .monospaced))
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text("CANALE")
+                    .font(.system(size: 11, weight: .medium))
+                    .tracking(0.8)
                     .foregroundColor(secondaryTextColor)
-                
-                TextField("content.input.nickname_placeholder", text: $viewModel.nickname)
-                    .textFieldStyle(.plain)
-                    .font(.bitchatSystem(size: 14, design: .monospaced))
-                    .frame(maxWidth: 80)
-                    .foregroundColor(textColor)
-                    .focused($isNicknameFieldFocused)
-                    .autocorrectionDisabled(true)
-                    #if os(iOS)
-                    .textInputAutocapitalization(.never)
-                    #endif
-                    .modifier(FocusEffectDisabledModifier())
-                    .onChange(of: isNicknameFieldFocused) { isFocused in
-                        if !isFocused {
-                            // Only validate when losing focus
-                            viewModel.validateAndSaveNickname()
-                        }
-                    }
-                    .onSubmit {
-                        viewModel.validateAndSaveNickname()
+
+                channelTitleView
+                    .onTapGesture { showLocationChannelsSheet = true }
+                    .onLongPressGesture(minimumDuration: 0.8) {
+                        viewModel.panicClearAllData()
                     }
             }
-            
+
             Spacer()
             
-            // Channel badge + dynamic spacing + people counter
-            // Precompute header count and color outside the ViewBuilder expressions
-            let cc = channelPeopleCountAndColor()
+            headerTrailingActions
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+    }
+
+    @ViewBuilder
+    private var channelTitleView: some View {
+        let channelName: String = {
+            switch locationManager.selectedChannel {
+            case .mesh: return "mesh"
+            case .location(let ch): return ch.geohash
+            }
+        }()
+        HStack(spacing: 0) {
+            Text("#")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundColor(Self.meshAccent)
+            Text(channelName)
+                .font(.system(size: 22, weight: .semibold))
+                .tracking(-0.4)
+                .foregroundColor(textColor)
+        }
+    }
+
+    @ViewBuilder
+    private var headerTrailingActions: some View {
+        HStack(spacing: 4) {
+            if viewModel.hasAnyUnreadMessages {
+                Button(action: { viewModel.openMostRelevantPrivateChat() }) {
+                    Image(systemName: "envelope")
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundColor(Self.meshAccent)
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(
+                    String(localized: "content.accessibility.open_unread_private_chat", comment: "Accessibility label for the unread private chat button")
+                )
+            }
+            Button(action: { showAppInfo = true }) {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundColor(textColor)
+                    .frame(width: 36, height: 36)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("More info")
+        }
+    }
+
+    var statusStripView: some View {
+        let reachable = viewModel.allPeers.filter { $0.isReachable || $0.isConnected }.count
+        return HStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(Color(red: 0.122, green: 0.541, blue: 0.357).opacity(0.18))
+                    .frame(width: 12, height: 12)
+                Circle()
+                    .fill(Color(red: 0.122, green: 0.541, blue: 0.357))
+                    .frame(width: 6, height: 6)
+            }
+            Text("mesh attiva")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(textColor)
+            Text("·")
+                .font(.system(size: 12))
+                .foregroundColor(secondaryTextColor.opacity(0.5))
+            Text("\(reachable) \(reachable == 1 ? "nodo" : "nodi")")
+                .font(.system(size: 12))
+                .monospacedDigit()
+                .foregroundColor(secondaryTextColor)
+            Spacer()
+            Image(systemName: "battery.75")
+                .font(.system(size: 16, weight: .regular))
+                .foregroundColor(secondaryTextColor)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(meshSurface2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.horizontal, 14)
+        .padding(.bottom, 10)
+    }
+
+    // Legacy header trailing column kept for code paths that still reference
+    // the channel-aware counter. Not rendered in the new header layout.
+    @ViewBuilder
+    private var legacyHeaderTrailing: some View {
+        let cc = channelPeopleCountAndColor()
             let headerCountColor: Color = cc.1
             let headerOtherPeersCount: Int = {
                 if case .location = locationManager.selectedChannel {
