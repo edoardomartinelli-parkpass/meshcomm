@@ -59,8 +59,11 @@ struct ContentView: View {
     @State private var showRadarSheet = false
     @State private var showSideDrawer = false
     @State private var showChannelMore = false
+    @State private var showChannelManager = false
     @State private var channelMuted = false
     @State private var selectedTopic: String = "mesh"
+    @State private var managedChannels: [ManagedChannel] = ManagedChannel.defaults
+    @AppStorage("meshcomm.channels.v1") private var managedChannelsBlob: String = ""
     @StateObject private var composerSOSLocator = SOSLocationFetcher()
     @State private var selectedMessageSender: String?
     @State private var selectedMessageSenderID: PeerID?
@@ -222,7 +225,15 @@ struct ContentView: View {
             RadarSheetView(viewModel: viewModel)
         }
         .sheet(isPresented: $showChannelMore) { channelMoreSheet }
+        .sheet(isPresented: $showChannelManager) {
+            ChannelManagerSheet(
+                channels: $managedChannels,
+                selectedTopic: $selectedTopic
+            )
+        }
         .overlay(alignment: .topLeading) { sideDrawerOverlay }
+        .onAppear(perform: loadManagedChannels)
+        .onChange(of: managedChannels) { _ in persistManagedChannels() }
         .confirmationDialog(
             "Inviare SOS broadcast?",
             isPresented: $showSOSConfirm,
@@ -436,6 +447,7 @@ struct ContentView: View {
             SideDrawerView(
                 isOpen: $showSideDrawer,
                 selectedTopic: $selectedTopic,
+                channels: $managedChannels,
                 nickname: viewModel.nickname,
                 nodeShortID: String(viewModel.meshService.myPeerID.id.prefix(4)),
                 nodesActive: viewModel.allPeers.filter { $0.isConnected || $0.isReachable }.count,
@@ -473,6 +485,25 @@ struct ContentView: View {
     private func handleDrawerOpenSettings() {
         showSideDrawer = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { showSettings = true }
+    }
+
+    // MARK: - Managed channels persistence
+
+    private func loadManagedChannels() {
+        guard managedChannels == ManagedChannel.defaults else { return }
+        guard !managedChannelsBlob.isEmpty,
+              let data = managedChannelsBlob.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode([ManagedChannel].self, from: data),
+              !decoded.isEmpty
+        else { return }
+        managedChannels = decoded
+    }
+
+    private func persistManagedChannels() {
+        guard let data = try? JSONEncoder().encode(managedChannels),
+              let s = String(data: data, encoding: .utf8)
+        else { return }
+        managedChannelsBlob = s
     }
 
     // MARK: - Composer subviews (DESIGN.md §5, §13)
@@ -1043,18 +1074,11 @@ struct ContentView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Side menu")
 
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("CANALE")
-                    .font(.system(size: 11, weight: .medium))
-                    .tracking(0.8)
-                    .foregroundColor(secondaryTextColor)
-
-                channelTitleView
-                    .onTapGesture { showLocationChannelsSheet = true }
-                    .onLongPressGesture(minimumDuration: 0.8) {
-                        viewModel.panicClearAllData()
-                    }
-            }
+            channelTitleView
+                .onTapGesture { showChannelManager = true }
+                .onLongPressGesture(minimumDuration: 0.8) {
+                    viewModel.panicClearAllData()
+                }
 
             Spacer()
             
@@ -1929,6 +1953,7 @@ struct SettingsSheet: View {
 struct SideDrawerView: View {
     @Binding var isOpen: Bool
     @Binding var selectedTopic: String
+    @Binding var channels: [ManagedChannel]
     let nickname: String
     let nodeShortID: String
     let nodesActive: Int
@@ -1940,21 +1965,6 @@ struct SideDrawerView: View {
 
     private static let accent = Color(red: 0.851, green: 0.467, blue: 0.341)
     private static let danger = Color(red: 0.753, green: 0.212, blue: 0.173)
-
-    private struct DrawerChannel {
-        let name: String
-        let hint: String
-        let unread: Int
-        let danger: Bool
-    }
-
-    private let channels: [DrawerChannel] = [
-        DrawerChannel(name: "mesh", hint: "12 nodi", unread: 0, danger: false),
-        DrawerChannel(name: "rifugio", hint: "sofia, marco", unread: 2, danger: false),
-        DrawerChannel(name: "soccorso", hint: "solo SOS", unread: 0, danger: true),
-        DrawerChannel(name: "meteo", hint: "bot · ogni 30 min", unread: 4, danger: false),
-        DrawerChannel(name: "logs", hint: "sistema", unread: 0, danger: false)
-    ]
 
     private var bg: Color {
         colorScheme == .dark
@@ -2087,7 +2097,7 @@ struct SideDrawerView: View {
 
     private var channelsList: some View {
         VStack(spacing: 2) {
-            ForEach(channels, id: \.name) { ch in
+            ForEach(channels) { ch in
                 Button {
                     selectedTopic = ch.name
                     close()
@@ -2095,7 +2105,7 @@ struct SideDrawerView: View {
                     HStack(spacing: 12) {
                         Text("#")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(ch.danger
+                            .foregroundStyle(ch.isDanger
                                 ? Self.danger
                                 : (ch.name == selectedTopic ? Self.accent : muted))
                             .frame(width: 24)
@@ -2241,6 +2251,192 @@ struct ChannelMoreSheet: View {
             .padding(.vertical, 14)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Managed channels (DESIGN.md §9 + new channel manager)
+
+/// Codable model used by the side drawer and the channel manager sheet.
+/// Persisted as JSON in `AppStorage` so user-added channels survive
+/// relaunches.
+struct ManagedChannel: Identifiable, Hashable, Codable {
+    var id: String { name }
+    var name: String
+    var hint: String
+    var unread: Int
+    var isDanger: Bool
+
+    static let defaults: [ManagedChannel] = [
+        ManagedChannel(name: "mesh", hint: "canale principale", unread: 0, isDanger: false),
+        ManagedChannel(name: "rifugio", hint: "sofia, marco", unread: 2, isDanger: false),
+        ManagedChannel(name: "soccorso", hint: "solo SOS", unread: 0, isDanger: true),
+        ManagedChannel(name: "meteo", hint: "bot · ogni 30 min", unread: 4, isDanger: false),
+        ManagedChannel(name: "logs", hint: "sistema", unread: 0, isDanger: false)
+    ]
+}
+
+/// Sheet opened by tapping `#mesh` in the header. Lets the user switch
+/// channel, create new ones, or swipe-to-delete existing ones (`#mesh`
+/// is protected as the home channel and cannot be removed).
+struct ChannelManagerSheet: View {
+    @Binding var channels: [ManagedChannel]
+    @Binding var selectedTopic: String
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var draftName: String = ""
+    @FocusState private var draftFocused: Bool
+
+    private static let accent = Color(red: 0.851, green: 0.467, blue: 0.341)
+    private static let danger = Color(red: 0.753, green: 0.212, blue: 0.173)
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(channels) { ch in
+                        channelRow(ch)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14))
+                            .listRowBackground(
+                                ch.name == selectedTopic
+                                ? Self.accent.opacity(colorScheme == .dark ? 0.18 : 0.12)
+                                : Color.clear
+                            )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if ch.name != "mesh" {
+                                    Button(role: .destructive) {
+                                        delete(ch)
+                                    } label: {
+                                        Label("elimina", systemImage: "trash")
+                                    }
+                                }
+                            }
+                    }
+                } header: {
+                    Text("canali")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.8)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    HStack(spacing: 10) {
+                        Text("#")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Self.accent)
+                            .frame(width: 18)
+                        TextField("nuovo canale", text: $draftName)
+                            .focused($draftFocused)
+                            .font(.system(size: 15))
+                            .autocorrectionDisabled(true)
+                            #if os(iOS)
+                            .textInputAutocapitalization(.never)
+                            #endif
+                            .submitLabel(.done)
+                            .onSubmit(addChannel)
+                        if canAdd {
+                            Button(action: addChannel) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 22))
+                                    .foregroundStyle(Self.accent)
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .animation(.easeInOut(duration: 0.15), value: canAdd)
+                } header: {
+                    Text("aggiungi")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(0.8)
+                        .foregroundStyle(.secondary)
+                } footer: {
+                    Text("solo lettere, numeri e trattini. swipe per eliminare un canale (#mesh non puo' essere rimosso).")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("canali")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                }
+            }
+        }
+    }
+
+    private func channelRow(_ ch: ManagedChannel) -> some View {
+        Button {
+            selectedTopic = ch.name
+            dismiss()
+        } label: {
+            HStack(spacing: 12) {
+                Text("#")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(
+                        ch.isDanger
+                        ? Self.danger
+                        : (ch.name == selectedTopic ? Self.accent : Color.secondary)
+                    )
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(ch.name)
+                        .font(.system(size: 15, weight: ch.name == selectedTopic ? .semibold : .medium))
+                        .foregroundStyle(Color.primary)
+                    Text(ch.hint)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if ch.unread > 0 {
+                    Text("\(ch.unread)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(Self.accent, in: Capsule())
+                }
+                if ch.name == selectedTopic {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Self.accent)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var canAdd: Bool {
+        let t = normalizedDraft
+        return !t.isEmpty && !channels.contains(where: { $0.name == t })
+    }
+
+    private var normalizedDraft: String {
+        let lower = draftName.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        return lower.filter { $0.isLetter || $0.isNumber || $0 == "-" }
+    }
+
+    private func addChannel() {
+        let name = normalizedDraft
+        guard !name.isEmpty, !channels.contains(where: { $0.name == name }) else { return }
+        let new = ManagedChannel(name: name, hint: "creato adesso", unread: 0, isDanger: false)
+        channels.append(new)
+        draftName = ""
+        draftFocused = false
+        selectedTopic = name
+    }
+
+    private func delete(_ ch: ManagedChannel) {
+        guard ch.name != "mesh" else { return }
+        channels.removeAll { $0.name == ch.name }
+        if selectedTopic == ch.name {
+            selectedTopic = "mesh"
+        }
     }
 }
 
