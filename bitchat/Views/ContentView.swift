@@ -1673,6 +1673,7 @@ struct RadarSheetView: View {
     @Environment(\.dismiss) var dismiss
     @State private var rows: [RadarRowData] = []
     @State private var refreshTask: Task<Void, Never>?
+    @State private var selectedPeer: RadarRowData?
 
     var body: some View {
         NavigationStack {
@@ -1681,7 +1682,12 @@ struct RadarSheetView: View {
                     emptyState
                 } else {
                     List(rows) { row in
-                        RadarRow(row: row)
+                        Button {
+                            selectedPeer = row
+                        } label: {
+                            RadarRow(row: row)
+                        }
+                        .buttonStyle(.plain)
                     }
                     .listStyle(.plain)
                 }
@@ -1710,6 +1716,11 @@ struct RadarSheetView: View {
                 }
             }
             .onDisappear { refreshTask?.cancel() }
+            .sheet(item: $selectedPeer) { row in
+                PeerDirectionSheet(row: row, sosPins: viewModel.sosPins)
+                    .presentationDetents([.height(420)])
+                    .presentationDragIndicator(.visible)
+            }
         }
     }
 
@@ -2336,6 +2347,178 @@ struct ChannelMoreSheet: View {
             .padding(.vertical, 14)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Peer direction sheet (proximity radar detail)
+
+/// Detail sheet shown when tapping a peer in the proximity radar list.
+/// Renders a big rotating arrow + meters when we have BOTH the user's own
+/// CoreLocation fix AND a `[SOS]` pin from that peer. Otherwise shows a
+/// fallback explaining that direction needs a geo-fix from the peer.
+struct PeerDirectionSheet: View {
+    let row: RadarRowData
+    let sosPins: [SOSPin]
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var fetcher = SOSLocationFetcher()
+    @State private var myCoord: CLLocationCoordinate2D?
+    @State private var fetching = true
+
+    private static let accent = Color(red: 0.851, green: 0.467, blue: 0.341)
+
+    /// Most recent SOS pin posted by this peer (matched by nickname). Falls
+    /// back to nil if the peer never broadcast a geo-located [SOS].
+    private var peerPin: SOSPin? {
+        sosPins
+            .filter { $0.nickname.lowercased() == row.nickname.lowercased() }
+            .max(by: { $0.timestamp < $1.timestamp })
+    }
+
+    private var bearingDegrees: Double? {
+        guard let me = myCoord, let pin = peerPin else { return nil }
+        let dLon = (pin.longitude - me.longitude) * .pi / 180
+        let lat1 = me.latitude * .pi / 180
+        let lat2 = pin.latitude * .pi / 180
+        let y = sin(dLon) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
+        let rads = atan2(y, x)
+        return (rads * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
+    }
+
+    private var distanceMeters: Double? {
+        guard let me = myCoord, let pin = peerPin else { return nil }
+        return CLLocation(latitude: me.latitude, longitude: me.longitude)
+            .distance(from: CLLocation(latitude: pin.latitude, longitude: pin.longitude))
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 18) {
+                header
+                if let bearing = bearingDegrees, let distance = distanceMeters {
+                    arrowView(bearing: bearing)
+                    metricsView(distance: distance, bearing: bearing)
+                } else if fetching {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    fallback
+                }
+                Spacer()
+            }
+            .padding(.top, 6)
+            .padding(.horizontal, 18)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                }
+            }
+        }
+        .task {
+            fetching = true
+            myCoord = await fetcher.fetchOnce()
+            fetching = false
+        }
+    }
+
+    private var header: some View {
+        VStack(spacing: 4) {
+            Text(row.nickname)
+                .font(.system(size: 20, weight: .semibold))
+            Text("\(row.shortID) · \(row.reading.rssiSmoothed) dBm · \(trendLabel)")
+                .font(.system(size: 12))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func arrowView(bearing: Double) -> some View {
+        ZStack {
+            Circle()
+                .stroke(Self.accent.opacity(0.25), lineWidth: 1)
+                .frame(width: 200, height: 200)
+            ForEach([0.0, 90.0, 180.0, 270.0], id: \.self) { angle in
+                Rectangle()
+                    .fill(Self.accent.opacity(0.18))
+                    .frame(width: 1, height: 10)
+                    .offset(y: -100)
+                    .rotationEffect(.degrees(angle))
+            }
+            Text("N")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .offset(y: -116)
+            Image(systemName: "location.north.fill")
+                .font(.system(size: 96, weight: .regular))
+                .foregroundStyle(Self.accent)
+                .rotationEffect(.degrees(bearing))
+                .shadow(color: Self.accent.opacity(0.5), radius: 14)
+        }
+        .frame(height: 220)
+    }
+
+    private func metricsView(distance: Double, bearing: Double) -> some View {
+        VStack(spacing: 6) {
+            Text(formatDistance(distance))
+                .font(.system(size: 32, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(Self.accent)
+            Text("verso \(compassLabel(bearing))  ·  \(Int(bearing.rounded()))°")
+                .font(.system(size: 13))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+            if let lastSOS = peerPin {
+                Text("fix da SOS · \(relativeTime(lastSOS.timestamp))")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    private var fallback: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "location.slash")
+                .font(.system(size: 36))
+                .foregroundStyle(.secondary)
+            Text("direzione non disponibile")
+                .font(.system(size: 15, weight: .semibold))
+            Text("Serve sia la tua posizione GPS sia un [SOS] broadcast da \(row.nickname) per calcolare la direzione. Distanza stimata dal BLE: \(String(format: "≈%.1f m", row.reading.approxMeters)).")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.vertical, 30)
+    }
+
+    private var trendLabel: String {
+        switch row.reading.trend {
+        case .approaching: return "in avvicinamento"
+        case .receding: return "in allontanamento"
+        case .stable: return "stabile"
+        case .unknown: return "calibrazione"
+        }
+    }
+
+    private func formatDistance(_ m: Double) -> String {
+        if m < 100 { return String(format: "%.0f m", m) }
+        if m < 1000 { return String(format: "%.0f m", (m / 10).rounded() * 10) }
+        return String(format: "%.1f km", m / 1000)
+    }
+
+    private func compassLabel(_ bearing: Double) -> String {
+        let dirs = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"]
+        let idx = Int((bearing / 45.0).rounded()) % 8
+        return dirs[idx < 0 ? idx + 8 : idx]
+    }
+
+    private func relativeTime(_ date: Date) -> String {
+        let secs = Int(-date.timeIntervalSinceNow)
+        if secs < 60 { return "\(secs)s fa" }
+        if secs < 3600 { return "\(secs / 60) min fa" }
+        return "\(secs / 3600) h fa"
     }
 }
 
